@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useRef, useMemo, useEffect } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Box, Text, TransformControls } from '@react-three/drei';
+import { Box, Text } from '@react-three/drei';
 import * as THREE from 'three';
 import { useWarehouseStore } from '@/store/warehouseStore';
 import type { WarehousePosition } from '@/lib/types';
@@ -26,19 +26,14 @@ export function Structure({ positionData, floorSize }: StructureProps) {
   const {
     selectPosition,
     selectedPositionId,
-    isEditMode,
-    updatePositionCoordinates,
   } = useWarehouseStore();
   
   const [isHovered, setIsHovered] = useState(false);
   const ref = useRef<THREE.Mesh>(null!);
-  const transformControlsRef = useRef<any>(null!);
-  const [ghostPosition, setGhostPosition] = useState<THREE.Vector3 | null>(null);
 
-  const { id, type, position, rotation, dimensions, occupancyPercentage, status, code } = positionData;
+  const { id, type, position, dimensions, status, code } = positionData;
   
   const isSelected = selectedPositionId === id;
-  const showTransformControls = isEditMode && isSelected;
 
   const color = status === 'EMPTY' ? statusColors.EMPTY : statusColors[status];
   const isWireframe = status === 'EMPTY';
@@ -56,7 +51,14 @@ export function Structure({ positionData, floorSize }: StructureProps) {
 
   useFrame(() => {
     if (ref.current && !isWireframe) {
-        const targetColor = new THREE.Color(isHovered ? '#06B6D4' : color);
+        let targetColor;
+        if (isSelected) {
+            targetColor = new THREE.Color('#f59e0b'); // Amber for selected
+        } else if (isHovered) {
+            targetColor = new THREE.Color('#06B6D4'); // Cyan for hovered
+        } else {
+            targetColor = new THREE.Color(color);
+        }
         (ref.current.material as THREE.MeshStandardMaterial).color.lerp(targetColor, 0.1);
     }
   });
@@ -68,7 +70,9 @@ export function Structure({ positionData, floorSize }: StructureProps) {
 
   const handlePointerOver = (e: any) => {
     e.stopPropagation();
-    setIsHovered(true);
+    if (selectedPositionId !== id) {
+        setIsHovered(true);
+    }
     document.body.style.cursor = 'pointer';
   };
 
@@ -77,31 +81,7 @@ export function Structure({ positionData, floorSize }: StructureProps) {
     document.body.style.cursor = 'auto';
   };
 
-  const handleObjectChange = () => {
-    if (transformControlsRef.current) {
-        const newPos = transformControlsRef.current.object.position;
-        const halfFloor = floorSize / 2;
-        const halfWidth = dimensions[0] / 2;
-        const halfDepth = dimensions[2] / 2;
-        
-        const snappedX = Math.round(newPos.x / SNAP_GRID_SIZE) * SNAP_GRID_SIZE;
-        const snappedZ = Math.round(newPos.z / SNAP_GRID_SIZE) * SNAP_GRID_SIZE;
-        
-        const clampedX = THREE.MathUtils.clamp(snappedX, -halfFloor + halfWidth, halfFloor - halfWidth);
-        const clampedZ = THREE.MathUtils.clamp(snappedZ, -halfFloor + halfDepth, halfFloor - halfDepth);
-
-        setGhostPosition(new THREE.Vector3(clampedX, newPos.y, clampedZ));
-    }
-  };
-
-  const handleDraggingChanged = (isDragging: boolean) => {
-    if (!isDragging && ghostPosition) {
-        updatePositionCoordinates(id, [ghostPosition.x, ghostPosition.y, ghostPosition.z]);
-        setGhostPosition(null);
-    }
-  };
-
-  const structureElement = (
+  return (
     <group position={position as [number, number, number]}>
         <Box
             ref={ref}
@@ -127,29 +107,5 @@ export function Structure({ positionData, floorSize }: StructureProps) {
             {code}
         </Text>
     </group>
-  );
-
-  return (
-    <>
-        {showTransformControls ? (
-            <TransformControls
-                ref={transformControlsRef}
-                object={ref.current}
-                mode="translate"
-                showY={false}
-                onObjectChange={handleObjectChange}
-                onDraggingChanged={(e) => handleDraggingChanged(e.value)}
-            >
-                {structureElement}
-            </TransformControls>
-        ) : (
-            structureElement
-        )}
-        {ghostPosition && (
-            <Box position={ghostPosition} args={dimensions as [number, number, number]}>
-                <meshStandardMaterial color="green" opacity={0.4} transparent />
-            </Box>
-        )}
-    </>
   );
 }
