@@ -17,8 +17,15 @@ interface InstancedStructureProps {
   positions: WarehousePosition[];
 }
 
+const heatmapColors = {
+  NORMAL: new THREE.Color('#22c55e'), // green-500
+  ALERT: new THREE.Color('#ef4444'), // red-500
+  BLOCKED: new THREE.Color('#ef4444'), // red-500
+  EMPTY: new THREE.Color('#ffffff'), // white
+};
+
 export function InstancedStructure({ positions }: InstancedStructureProps) {
-  const { selectPosition, selectedPositionId } = useWarehouseStore();
+  const { selectPosition, selectedPositionId, viewMode } = useWarehouseStore();
   
   const racks = useMemo(() => positions.filter(p => p.type === 'RACK'), [positions]);
   const floorBlocks = useMemo(() => positions.filter(p => p.type === 'FLOOR_BLOCK'), [positions]);
@@ -28,9 +35,23 @@ export function InstancedStructure({ positions }: InstancedStructureProps) {
     selectPosition(id);
   };
   
+  if (viewMode === 'heatmap') {
+    return (
+      <group>
+        {positions.map(pos => (
+          <HeatmapInstance
+            key={pos.id}
+            positionData={pos}
+            isSelected={selectedPositionId === pos.id}
+            onClick={(e) => handleClick(pos.id, e)}
+          />
+        ))}
+      </group>
+    );
+  }
+
   return (
     <group>
-      {/* Estruturas dos Racks e Itens dentro deles */}
       {racks.map(pos => (
         <RackInstance
           key={pos.id}
@@ -40,7 +61,6 @@ export function InstancedStructure({ positions }: InstancedStructureProps) {
         />
       ))}
       
-      {/* Itens nos Blocados (Pallet + Caixa) e área de clique */}
       {floorBlocks.map(pos => (
          <group key={pos.id} position={pos.position}>
           {pos.items.length > 0 && (
@@ -64,7 +84,6 @@ export function InstancedStructure({ positions }: InstancedStructureProps) {
               {pos.status === 'ALERT' && <AlertIndicator offset={[0, pos.dimensions[1] / 2 + 0.5, 0]} />}
             </>
           )}
-          {/* Caixa de clique invisível */}
           <Box
             args={pos.dimensions}
             visible={false}
@@ -74,6 +93,37 @@ export function InstancedStructure({ positions }: InstancedStructureProps) {
       ))}
 
     </group>
+  );
+}
+
+function HeatmapInstance({ positionData, isSelected, ...props }: any) {
+  const { position, dimensions, status } = positionData;
+  const materialRef = useRef<THREE.MeshStandardMaterial>(null!);
+
+  const baseColor = heatmapColors[status as keyof typeof heatmapColors] || heatmapColors.EMPTY;
+
+  useFrame(() => {
+    if (materialRef.current) {
+      const targetColor = isSelected ? selectedColor : baseColor;
+      materialRef.current.color.lerp(targetColor, 0.1);
+    }
+  });
+
+  return (
+    <Box
+      args={dimensions}
+      position={position}
+      {...props}
+    >
+      <meshStandardMaterial
+        ref={materialRef}
+        color={baseColor}
+        opacity={status === 'EMPTY' ? 0.05 : 0.6}
+        transparent
+        metalness={0.1}
+        roughness={0.7}
+      />
+    </Box>
   );
 }
 
@@ -148,24 +198,22 @@ function RackStructure({ dimensions, uprightsMaterial, beamsMaterial }: any) {
             </mesh>
 
             {/* Beams (Longarinas) Laranjas */}
-            {[ -halfH + beamHeight/2, halfH - beamHeight/2 ].map(y => (
-                <group key={y}>
-                    {/* Frente e Trás */}
-                    <mesh castShadow receiveShadow material={beamsMaterial} position={[0, y, -halfD]}>
-                        <boxGeometry args={[rackWidth, beamHeight, uprightWidth]} />
-                    </mesh>
-                     <mesh castShadow receiveShadow material={beamsMaterial} position={[0, y, halfD]}>
-                        <boxGeometry args={[rackWidth, beamHeight, uprightWidth]} />
-                    </mesh>
-                    {/* Lados */}
-                    <mesh castShadow receiveShadow material={beamsMaterial} position={[-halfW, y, 0]}>
-                        <boxGeometry args={[uprightWidth, beamHeight, rackDepth]} />
-                    </mesh>
-                     <mesh castShadow receiveShadow material={beamsMaterial} position={[halfW, y, 0]}>
-                        <boxGeometry args={[uprightWidth, beamHeight, rackDepth]} />
-                    </mesh>
-                </group>
-            ))}
+            <group position={[0, -halfH + beamHeight/2, 0]}>
+                {/* Frente e Trás */}
+                <mesh castShadow receiveShadow material={beamsMaterial} position={[0, 0, -halfD]}>
+                    <boxGeometry args={[rackWidth, beamHeight, uprightWidth]} />
+                </mesh>
+                 <mesh castShadow receiveShadow material={beamsMaterial} position={[0, 0, halfD]}>
+                    <boxGeometry args={[rackWidth, beamHeight, uprightWidth]} />
+                </mesh>
+                {/* Lados */}
+                <mesh castShadow receiveShadow material={beamsMaterial} position={[-halfW, 0, 0]}>
+                    <boxGeometry args={[uprightWidth, beamHeight, rackDepth]} />
+                </mesh>
+                 <mesh castShadow receiveShadow material={beamsMaterial} position={[halfW, 0, 0]}>
+                    <boxGeometry args={[uprightWidth, beamHeight, rackDepth]} />
+                </mesh>
+            </group>
         </group>
     )
 }

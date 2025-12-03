@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { WarehouseState, WarehousePosition, Filters } from '@/lib/types';
+import type { WarehouseState, WarehousePosition, Filters, ViewMode } from '@/lib/types';
 import { initialWarehouseData } from '@/lib/data';
 
 const filterPositions = (positions: WarehousePosition[], filters: Filters): WarehousePosition[] => {
@@ -32,6 +32,7 @@ export const useWarehouseStore = create<WarehouseState>((set, get) => ({
   canvasRef: null,
   filters: { sku: '', code: '', lpn: '' },
   isFilterSidebarOpen: false,
+  viewMode: 'normal',
 
   setInitialData: (positions) => set({ 
     positions, 
@@ -75,6 +76,8 @@ export const useWarehouseStore = create<WarehouseState>((set, get) => ({
   },
 
   toggleFilterSidebar: () => set(state => ({ isFilterSidebarOpen: !state.isFilterSidebarOpen })),
+  
+  setViewMode: (mode) => set({ viewMode: mode }),
 }));
 
 useWarehouseStore.getState().setInitialData(initialWarehouseData);

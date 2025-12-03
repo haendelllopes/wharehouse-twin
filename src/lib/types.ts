@@ -1,5 +1,6 @@
 export type StructureType = 'RACK' | 'FLOOR_BLOCK';
 export type StatusType = 'NORMAL' | 'ALERT' | 'EMPTY' | 'BLOCKED';
+export type ViewMode = 'normal' | 'heatmap';
 
 export interface InventoryItem {
   sku: string;
@@ -43,6 +44,7 @@ export interface WarehouseState {
   canvasRef: React.RefObject<HTMLCanvasElement> | null;
   filters: Filters;
   isFilterSidebarOpen: boolean;
+  viewMode: ViewMode;
   
   // Actions
   setInitialData: (positions: WarehousePosition[]) => void;
@@ -53,4 +55,5 @@ export interface WarehouseState {
   setCanvasRef: (ref: React.RefObject<HTMLCanvasElement>) => void;
   setFilters: (newFilters: Partial<Filters>) => void;
   toggleFilterSidebar: () => void;
+  setViewMode: (mode: ViewMode) => void;
 }
