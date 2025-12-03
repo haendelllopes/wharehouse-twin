@@ -29,19 +29,17 @@ function generateWarehouseData(): WarehousePosition[] {
     else if (aisleIndex === 1) {
       currentX = lastX + rackWidth + aisleWidth;
     } else if (aisleIndex === 2) {
-      currentX = lastX + rackWidth + aisleWidth + rackWidth;
-      lastX = currentX;
+      currentX = lastX; // Rua 3 fica encostada na 2
     }
     // Rua 4 e 5 (duplas)
     else if (aisleIndex === 3) {
-      currentX = lastX + rackWidth + aisleWidth;
+      currentX = lastX + rackWidth * 2 + aisleWidth; // Pula as 2 ruas anteriores
     } else if (aisleIndex === 4) {
-      currentX = lastX + rackWidth + aisleWidth + rackWidth;
-      lastX = currentX;
+      currentX = lastX + rackWidth; // Rua 5 encostada na 4
     }
     // Rua 6 (simples)
     else {
-      currentX = lastX + rackWidth + aisleWidth;
+      currentX = lastX + rackWidth * 2 + aisleWidth; // Pula as 2 ruas anteriores
     }
     
     for (let col = 0; col < numCols; col++) {
@@ -57,9 +55,9 @@ function generateWarehouseData(): WarehousePosition[] {
           code: id,
           type: 'RACK',
           position: [
-            currentX,
+            currentX + (aisleIndex === 2 || aisleIndex === 4 ? rackWidth : 0),
             level * rackHeight + rackHeight / 2,
-            startZ + col * rackDepth + rackDepth / 2,
+            startZ + col * rackDepth,
           ],
           rotation: [0, 0, 0],
           dimensions: [rackWidth, rackHeight, rackDepth],
@@ -70,53 +68,58 @@ function generateWarehouseData(): WarehousePosition[] {
         });
       }
     }
-     if (aisleIndex === 0 || aisleIndex === 2 || aisleIndex === 4) {
-        lastX = currentX;
+    // Atualiza o lastX para a próxima iteração das ruas duplas
+    if (aisleIndex === 1) {
+      lastX = currentX;
+    } else if (aisleIndex === 3) {
+      lastX = currentX;
     }
   }
 
   // --- Configurações dos Blocados ---
   const blockPalletWidth = 1.2;
   const blockPalletHeight = 1.2;
-  const blockStartX = lastX + rackWidth + aisleWidth; // Começa depois da última rua de racks
-  const blockStartZ = startZ;
-  const blockAisle = 2.8;
+  const blockPalletDepth = 1.2;
+  const blockAisle = 6.0;
 
-  // Gerar Blocados
+  // Posição inicial dos blocados, ao lado da última rua de racks.
+  const lastRackX = startX + (numAisles/2-1)*(rackWidth*2 + aisleWidth) + rackWidth;
+  const blockStartX = lastRackX + rackWidth + aisleWidth;
+
+
+  // Gerar Blocados - 2 ruas com 2 quadras cada, na mesma orientação dos racks
   for (let row = 1; row <= 2; row++) {
-      for (let quad = 1; quad <= 2; quad++) {
-          const id = `B${row}-Q${quad}`;
-          const quadStartX = blockStartX + (row - 1) * (blockPalletWidth * 5 + aisleWidth);
-          const quadStartZ = blockStartZ + (quad-1) * (blockPalletWidth * 1.2 + blockAisle);
-
-          // Um blocado é uma coleção de posições de paletes
-          for (let i = 0; i < 10; i++) {
-            const palletId = `${id}-P${i+1}`;
-            const isOccupied = Math.random() < 0.7;
-            
-            positions.push({
-              id: palletId,
-              code: palletId,
-              type: 'FLOOR_BLOCK',
-              position: [
-                  quadStartX + i * blockPalletWidth,
-                  blockPalletHeight / 2,
-                  quadStartZ
-              ],
-              rotation: [0, 0, 0],
-              dimensions: [blockPalletWidth, blockPalletHeight, blockPalletWidth],
-              occupancyPercentage: isOccupied ? 100 : 0,
-              status: isOccupied ? (Math.random() < 0.02 ? 'ALERT' : 'NORMAL') : 'EMPTY',
-              items: isOccupied ? [{
-                  sku: `SKU-${palletId}`,
-                  description: 'Palete blocado',
-                  quantity: 1,
-                  lpn: `LPN-${palletId}`
-              }] : [],
-              lastUpdated: new Date().toISOString(),
-            });
-          }
+    for (let quad = 1; quad <= 2; quad++) {
+      const quadStartX = blockStartX + (row - 1) * (blockPalletWidth + blockAisle);
+      
+      // Cada quadra tem 10 paletes de profundidade
+      for (let i = 0; i < 10; i++) {
+        const palletId = `B${row}Q${quad}-P${i + 1}`;
+        const isOccupied = Math.random() < 0.7;
+        
+        positions.push({
+          id: palletId,
+          code: palletId,
+          type: 'FLOOR_BLOCK',
+          position: [
+            quadStartX,
+            blockPalletHeight / 2,
+            startZ + (quad-1)*(blockPalletDepth*10 + 4) + i * blockPalletDepth, // Orientado em Z
+          ],
+          rotation: [0, 0, 0],
+          dimensions: [blockPalletWidth, blockPalletHeight, blockPalletDepth],
+          occupancyPercentage: isOccupied ? 100 : 0,
+          status: isOccupied ? (Math.random() < 0.02 ? 'ALERT' : 'NORMAL') : 'EMPTY',
+          items: isOccupied ? [{
+            sku: `SKU-${palletId}`,
+            description: 'Palete blocado',
+            quantity: 1,
+            lpn: `LPN-${palletId}`
+          }] : [],
+          lastUpdated: new Date().toISOString(),
+        });
       }
+    }
   }
 
   return positions;
