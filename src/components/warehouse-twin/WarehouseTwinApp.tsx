@@ -3,7 +3,6 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { useWarehouseStore } from '@/store/warehouseStore';
 import { runAiAnalysis } from '@/app/actions';
-import { initialWarehouseData } from '@/lib/data';
 
 import { Header } from './Header';
 import { AiDashboard } from './AiDashboard';
@@ -13,17 +12,9 @@ import { Leva } from 'leva';
 import { FilterSidebar } from './FilterSidebar';
 
 export default function WarehouseTwinApp() {
-  const { positions, setAiData, setInitialData } = useWarehouseStore();
+  const { positions, setAiData } = useWarehouseStore();
   const [loadingAi, setLoadingAi] = useState(true);
-  const isInitialDataLoaded = useRef(false);
-
-  useEffect(() => {
-    if (!isInitialDataLoaded.current) {
-      setInitialData(initialWarehouseData);
-      isInitialDataLoaded.current = true;
-    }
-  }, [setInitialData]);
-
+  
   useEffect(() => {
     if (positions.length > 0) {
       const analyze = async () => {

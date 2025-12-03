@@ -1,3 +1,5 @@
+'use client';
+
 import { create } from 'zustand';
 import type { WarehouseState, WarehousePosition, Filters, ViewMode } from '@/lib/types';
 import { initialWarehouseData } from '@/lib/data';
@@ -23,8 +25,8 @@ const filterPositions = (positions: WarehousePosition[], filters: Filters): Ware
 };
 
 export const useWarehouseStore = create<WarehouseState>((set, get) => ({
-  positions: [],
-  filteredPositions: [],
+  positions: initialWarehouseData,
+  filteredPositions: initialWarehouseData,
   isEditMode: false,
   selectedPositionId: null,
   performanceScore: 0,
@@ -36,7 +38,7 @@ export const useWarehouseStore = create<WarehouseState>((set, get) => ({
 
   setInitialData: (positions) => set({ 
     positions, 
-    filteredPositions: positions 
+    filteredPositions: filterPositions(positions, get().filters)
   }),
   
   toggleEditMode: () => set(state => {
@@ -79,5 +81,3 @@ export const useWarehouseStore = create<WarehouseState>((set, get) => ({
   
   setViewMode: (mode) => set({ viewMode: mode }),
 }));
-
-useWarehouseStore.getState().setInitialData(initialWarehouseData);
