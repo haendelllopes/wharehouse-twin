@@ -18,11 +18,14 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertCircle, Lightbulb } from 'lucide-react';
 import { StatusType } from '@/lib/types';
 import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 export function DetailsSidebar() {
-  const { positions, selectedPositionId, selectPosition } = useWarehouseStore();
+  const { positions, selectedPositionId, selectPosition, aiSuggestions } = useWarehouseStore();
   
   const selectedPosition = positions.find(p => p.id === selectedPositionId);
 
@@ -31,6 +34,21 @@ export function DetailsSidebar() {
     ALERT: 'bg-red-500',
     EMPTY: 'bg-gray-500',
     BLOCKED: 'bg-yellow-500 text-black',
+  };
+
+  const positionSuggestion = selectedPosition && selectedPosition.status === 'ALERT'
+    ? aiSuggestions.find(s => s.includes(selectedPosition.code))
+    : null;
+
+  const getPositionTypeLabel = (type: string) => {
+    switch (type) {
+      case 'RACK':
+        return 'Porta-Palete';
+      case 'FLOOR_BLOCK':
+        return 'Blocado';
+      default:
+        return type;
+    }
   };
 
   return (
@@ -42,9 +60,22 @@ export function DetailsSidebar() {
               <SheetHeader>
                 <SheetTitle className="text-2xl">{selectedPosition.code}</SheetTitle>
                 <SheetDescription>
-                  Details for position ID: {selectedPosition.id}
+                  Detalhes para a posição ID: {selectedPosition.id}
                 </SheetDescription>
               </SheetHeader>
+              
+              {positionSuggestion && (
+                <Alert variant="destructive" className="mt-4">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle className="flex items-center gap-2">
+                    <Lightbulb className="h-4 w-4" /> Sugestão da IA
+                  </AlertTitle>
+                  <AlertDescription>
+                    {positionSuggestion}
+                  </AlertDescription>
+                </Alert>
+              )}
+
               <div className="mt-6 space-y-4">
                 <div>
                   <h3 className="text-sm font-medium text-muted-foreground">Status</h3>
@@ -53,11 +84,11 @@ export function DetailsSidebar() {
                   </Badge>
                 </div>
                 <div>
-                  <h3 className="text-sm font-medium text-muted-foreground">Type</h3>
-                  <p className="text-foreground">{selectedPosition.type.replace('_', ' ')}</p>
+                  <h3 className="text-sm font-medium text-muted-foreground">Tipo</h3>
+                  <p className="text-foreground">{getPositionTypeLabel(selectedPosition.type)}</p>
                 </div>
                 <div>
-                  <h3 className="text-sm font-medium text-muted-foreground">Occupancy</h3>
+                  <h3 className="text-sm font-medium text-muted-foreground">Ocupação</h3>
                   <div className="flex items-center gap-2">
                     <p className="font-bold text-accent">{selectedPosition.occupancyPercentage.toFixed(1)}%</p>
                     <div className="h-2 w-full rounded-full bg-muted">
@@ -69,21 +100,21 @@ export function DetailsSidebar() {
                   </div>
                 </div>
                 <div>
-                  <h3 className="text-sm font-medium text-muted-foreground">Last Updated</h3>
+                  <h3 className="text-sm font-medium text-muted-foreground">Última Atualização</h3>
                   <p className="text-foreground">
-                    {format(new Date(selectedPosition.lastUpdated), 'PPP p')}
+                    {format(new Date(selectedPosition.lastUpdated), "PPP 'às' p", { locale: ptBR })}
                   </p>
                 </div>
               </div>
 
               <div className="mt-6">
-                <h3 className="mb-2 text-lg font-semibold">Inventory Items</h3>
+                <h3 className="mb-2 text-lg font-semibold">Itens no Inventário</h3>
                 <div className="rounded-md border">
                   <Table>
                     <TableHeader>
                       <TableRow>
                         <TableHead>SKU</TableHead>
-                        <TableHead>Qty</TableHead>
+                        <TableHead>Qtd</TableHead>
                         <TableHead>LPN</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -99,7 +130,7 @@ export function DetailsSidebar() {
                       ) : (
                         <TableRow>
                           <TableCell colSpan={3} className="text-center text-muted-foreground">
-                            No items in this location.
+                            Nenhum item nesta posição.
                           </TableCell>
                         </TableRow>
                       )}
