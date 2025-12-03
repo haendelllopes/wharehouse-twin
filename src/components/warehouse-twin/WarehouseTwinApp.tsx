@@ -24,14 +24,12 @@ export default function WarehouseTwinApp() {
     }
   }, [setInitialData]);
 
-  const memoizedPositions = useMemo(() => positions, [positions]);
-
   useEffect(() => {
-    if (memoizedPositions.length > 0) {
+    if (positions.length > 0) {
       const analyze = async () => {
         setLoadingAi(true);
         try {
-          const { performanceScore, aiSuggestions } = await runAiAnalysis(memoizedPositions);
+          const { performanceScore, aiSuggestions } = await runAiAnalysis(positions);
           setAiData(performanceScore, aiSuggestions);
         } catch (error) {
             console.error("Failed to run AI analysis", error);
@@ -42,7 +40,7 @@ export default function WarehouseTwinApp() {
       };
       analyze();
     }
-  }, [memoizedPositions, setAiData]);
+  }, [positions, setAiData]);
 
 
   return (
