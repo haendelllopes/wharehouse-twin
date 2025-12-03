@@ -50,7 +50,7 @@ export function WarehouseScene() {
             shadow-camera-top={FLOOR_SIZE/2}
             shadow-camera-bottom={-FLOOR_SIZE/2}
           />
-          <OrbitControls makeDefault minDistance={10} maxDistance={100} maxPolarAngle={Math.PI / 2.1}/>
+          <OrbitControls makeDefault minDistance={10} maxDistance={100} maxPolarAngle={Math.PI / 2.1} enableDamping={false} />
 
           <Floor size={FLOOR_SIZE} />
           <FloorLines size={FLOOR_SIZE} />
