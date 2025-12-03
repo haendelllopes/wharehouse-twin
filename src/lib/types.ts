@@ -27,13 +27,22 @@ export interface WarehousePosition {
   lastUpdated: string;
 }
 
+export interface Filters {
+  sku: string;
+  code: string;
+  lpn: string;
+}
+
 export interface WarehouseState {
   positions: WarehousePosition[];
+  filteredPositions: WarehousePosition[];
   isEditMode: boolean;
   selectedPositionId: string | null;
   performanceScore: number;
   aiSuggestions: string[];
   canvasRef: React.RefObject<HTMLCanvasElement> | null;
+  filters: Filters;
+  isFilterSidebarOpen: boolean;
   
   // Actions
   setInitialData: (positions: WarehousePosition[]) => void;
@@ -42,4 +51,6 @@ export interface WarehouseState {
   updatePositionCoordinates: (id: string, newPos: [number, number, number]) => void;
   setAiData: (score: number, suggestions: string[]) => void;
   setCanvasRef: (ref: React.RefObject<HTMLCanvasElement>) => void;
+  setFilters: (newFilters: Partial<Filters>) => void;
+  toggleFilterSidebar: () => void;
 }

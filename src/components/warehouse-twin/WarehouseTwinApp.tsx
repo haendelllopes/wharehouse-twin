@@ -10,6 +10,7 @@ import { AiDashboard } from './AiDashboard';
 import { DetailsSidebar } from './DetailsSidebar';
 import { WarehouseScene } from './WarehouseScene';
 import { Leva } from 'leva';
+import { FilterSidebar } from './FilterSidebar';
 
 export default function WarehouseTwinApp() {
   const { positions, setAiData, setInitialData } = useWarehouseStore();
@@ -53,6 +54,7 @@ export default function WarehouseTwinApp() {
         <AiDashboard loading={loadingAi} />
       </main>
       <DetailsSidebar />
+      <FilterSidebar />
     </div>
   );
 }

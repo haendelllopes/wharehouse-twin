@@ -14,7 +14,7 @@ import { FloorLines } from './FloorLines';
 const FLOOR_SIZE = 45;
 
 export function WarehouseScene() {
-  const { positions, setCanvasRef } = useWarehouseStore();
+  const { filteredPositions, setCanvasRef } = useWarehouseStore();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   
   useEffect(() => {
@@ -55,7 +55,7 @@ export function WarehouseScene() {
           <Floor size={FLOOR_SIZE} />
           <FloorLines size={FLOOR_SIZE} />
           
-          <InstancedStructure positions={positions} />
+          <InstancedStructure positions={filteredPositions} />
 
         </Suspense>
         {showStats && <Stats />}
