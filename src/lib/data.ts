@@ -14,35 +14,35 @@ function generateWarehouseData(): WarehousePosition[] {
 
   const startX = -20;
   const startZ = -15;
-  let lastPairX = startX;
 
   // Gerar Porta-Paletes (Racks)
   for (let aisleIndex = 0; aisleIndex < numAisles; aisleIndex++) {
     let currentX;
     
-    if (aisleIndex === 0) { // Rua 1 (simples, na borda)
+    if (aisleIndex === 0) { // Rua 1
       currentX = startX;
-    } else if (aisleIndex === 1) { // Rua 2 (início do primeiro par)
-      currentX = startX + rackWidth + aisleWidth;
-      lastPairX = currentX;
-    } else if (aisleIndex === 2) { // Rua 3 (costas com a Rua 2)
-      currentX = lastPairX + rackWidth;
-    } else if (aisleIndex === 3) { // Rua 4 (início do segundo par)
-      currentX = lastPairX + rackWidth * 2 + aisleWidth;
-      lastPairX = currentX;
-    } else if (aisleIndex === 4) { // Rua 5 (costas com a Rua 4)
-      currentX = lastPairX + rackWidth;
-    } else { // Rua 6 (simples, na outra borda)
-      currentX = lastPairX + rackWidth * 2 + aisleWidth;
+    } else if (aisleIndex % 2 !== 0) { // Início de um par (costas com a anterior)
+      currentX = positions[positions.length - numCols * numLevels].position[0] + rackWidth;
+    } else { // Início de um novo corredor
+      currentX = positions[positions.length - numCols * numLevels].position[0] + aisleWidth;
     }
     
     for (let col = 0; col < numCols; col++) {
       for (let level = 0; level < numLevels; level++) {
-        const isOccupied = Math.random() < 0.7; // 70% de ocupação
         const streetNum = aisleIndex + 1;
         const colNum = col + 1;
         const levelNum = level + 1;
         const id = `R${String(streetNum).padStart(2, '0')}-C${String(colNum).padStart(2, '0')}-L${levelNum}`;
+        
+        // Manually set some alerts for consistency
+        let status: 'NORMAL' | 'ALERT' | 'EMPTY' = 'NORMAL';
+        if (id === 'R01-C01-L5' || id === 'R02-C05-L3' || id === 'R04-C08-L1') {
+          status = 'ALERT';
+        } else if (Math.random() > 0.7) { // 30% chance of being empty
+          status = 'EMPTY';
+        }
+
+        const isOccupied = status !== 'EMPTY';
         
         positions.push({
           id,
@@ -56,7 +56,7 @@ function generateWarehouseData(): WarehousePosition[] {
           rotation: [0, 0, 0],
           dimensions: [rackWidth, rackHeight, rackDepth],
           occupancyPercentage: isOccupied ? 100 : 0,
-          status: isOccupied ? (Math.random() < 0.05 ? 'ALERT' : 'NORMAL') : 'EMPTY',
+          status: status,
           items: isOccupied ? [{ sku: `SKU-${id}`, description: 'Item em palete', quantity: 1, lpn: `LPN-${id}` }] : [],
           lastUpdated: new Date().toISOString(),
         });
@@ -71,8 +71,8 @@ function generateWarehouseData(): WarehousePosition[] {
   const blockAisle = 6.0;
 
   // Posição inicial dos blocados, ao lado da última rua de racks.
-  const lastRackX = lastPairX + rackWidth * 2 + aisleWidth + rackWidth;
-  const blockStartX = lastRackX + 4; // 4 metros de espaço
+  const lastRackX = positions[positions.length - 1].position[0];
+  const blockStartX = lastRackX + aisleWidth;
 
 
   // Gerar Blocados - 2 ruas com 2 quadras cada, na mesma orientação dos racks
@@ -83,7 +83,14 @@ function generateWarehouseData(): WarehousePosition[] {
       // Cada quadra tem 10 paletes de profundidade
       for (let i = 0; i < 10; i++) {
         const palletId = `B${row}Q${quad}-P${i + 1}`;
-        const isOccupied = Math.random() < 0.7;
+        
+        let status: 'NORMAL' | 'ALERT' | 'EMPTY' = 'NORMAL';
+        if (palletId === 'B01Q01-P05') {
+            status = 'ALERT';
+        } else if (Math.random() > 0.8) {
+            status = 'EMPTY';
+        }
+        const isOccupied = status !== 'EMPTY';
         
         positions.push({
           id: palletId,
@@ -97,7 +104,7 @@ function generateWarehouseData(): WarehousePosition[] {
           rotation: [0, 0, 0],
           dimensions: [blockPalletWidth, blockPalletHeight, blockPalletDepth],
           occupancyPercentage: isOccupied ? 100 : 0,
-          status: isOccupied ? (Math.random() < 0.02 ? 'ALERT' : 'NORMAL') : 'EMPTY',
+          status: status,
           items: isOccupied ? [{
             sku: `SKU-${palletId}`,
             description: 'Palete blocado',

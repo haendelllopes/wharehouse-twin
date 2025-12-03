@@ -73,14 +73,15 @@ const aiInsightsPrompt = ai.definePrompt({
 
   Analise os seguintes dados do armazém e forneça:
   1. Uma pontuação geral de desempenho do armazém (0-100), considerando fatores como ocupação, utilização e possíveis gargalos.
-  2. Uma lista de sugestões geradas por IA para melhorar a eficiência do armazém, como identificar áreas subutilizadas ou possíveis gargalos.
+  2. Uma lista de sugestões geradas por IA para melhorar a eficiência do armazém.
 
   Dados do Armazém:
   {{#each positions}}
   - Posição ID: {{id}}, Código: {{code}}, Tipo: {{type}}, Ocupação: {{occupancyPercentage}}%, Status: {{status}}
   {{/each}}
 
-  Garanta que as sugestões sejam específicas e acionáveis.
+  IMPORTANTE: Se uma posição tiver status 'ALERT' ou 'BLOCKED', crie uma sugestão específica para ela e **inclua o código da posição na sugestão** (ex: "Verificar item danificado na posição R01-C01-L5.").
+  Garanta que todas as sugestões sejam específicas e acionáveis.
   Forneça a saída em formato JSON.
 `,
 });
