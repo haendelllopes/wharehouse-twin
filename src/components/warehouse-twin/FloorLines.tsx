@@ -21,7 +21,7 @@ export function FloorLines({ size }: FloorLinesProps) {
   const startX = -30;
   const startZ = -25;
   const lastRackX = startX + (6/2-1)*(rackWidth*2 + aisleWidth) + rackWidth;
-  const blockStartX = lastRackX + rackWidth + aisleWidth;
+  const blockStartX = lastRackX + rackWidth + 4; // 4 metros de espaço
 
   // 2 ruas com 2 quadras cada
   for (let row = 1; row <= 2; row++) {
