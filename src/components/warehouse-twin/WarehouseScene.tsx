@@ -11,7 +11,7 @@ import { useControls } from 'leva';
 import { useEffect } from 'react';
 import { FloorLines } from './FloorLines';
 
-const FLOOR_SIZE = 70;
+const FLOOR_SIZE = 60;
 
 export function WarehouseScene() {
   const { positions, setCanvasRef } = useWarehouseStore();

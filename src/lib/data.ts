@@ -12,8 +12,8 @@ function generateWarehouseData(): WarehousePosition[] {
   const numLevels = 5;
   const aisleWidth = 5.0; // Espaço entre as estruturas
 
-  const startX = -30;
-  const startZ = -25;
+  const startX = -25;
+  const startZ = -15;
   let lastX = startX;
 
   // Gerar Porta-Paletes (Racks)

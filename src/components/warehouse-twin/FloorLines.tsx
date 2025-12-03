@@ -18,8 +18,8 @@ export function FloorLines({ size }: FloorLinesProps) {
   const aisleWidth = 5.0;
 
   // Posição inicial, consistente com data.ts
-  const startX = -30;
-  const startZ = -25;
+  const startX = -25;
+  const startZ = -15;
   const lastRackX = startX + (6/2-1)*(rackWidth*2 + aisleWidth) + rackWidth;
   const blockStartX = lastRackX + rackWidth + 4; // 4 metros de espaço
 
