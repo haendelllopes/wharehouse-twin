@@ -26,12 +26,15 @@ function generateWarehouseData(): WarehousePosition[] {
   for (let aisleIndex = 0; aisleIndex < numAisles; aisleIndex++) {
     let currentX;
     
-    if (aisleIndex === 0) { // Rua 1
+    // As ruas 2, 4 e 6 são back-to-back com as anteriores
+    if (aisleIndex > 0 && aisleIndex % 2 !== 0) { 
+      const previousAisleStartIndex = positions.length - (numCols * numLevels);
+      currentX = positions[previousAisleStartIndex].position[0] + rackWidth;
+    } else if (aisleIndex === 0) { // Rua 1
       currentX = startX;
-    } else if (aisleIndex % 2 !== 0) { // Início de um par (costas com a anterior)
-      currentX = positions[positions.length - numCols * numLevels].position[0] + rackWidth;
-    } else { // Início de um novo corredor
-      currentX = positions[positions.length - numCols * numLevels].position[0] + aisleWidth;
+    } else { // Início de um novo corredor (ruas 3 e 5)
+      const previousAisleStartIndex = positions.length - (numCols * numLevels);
+      currentX = positions[previousAisleStartIndex].position[0] + aisleWidth;
     }
     
     for (let col = 0; col < numCols; col++) {
@@ -43,11 +46,11 @@ function generateWarehouseData(): WarehousePosition[] {
         
         let status: StatusType = 'EMPTY';
         let lastUpdated = daysAgo(1);
-        let items = [];
 
         // Cenário 1: Item danificado (ALERT)
-        if (id === 'R01-C01-L5' || id === 'R02-C05-L3') {
+        if (id === 'R01-C01-L5' || id === 'R02-C05-L3' || id === 'R04-C08-L2') {
           status = 'ALERT';
+          lastUpdated = daysAgo(2);
         }
         // Cenário 2: Corredor parcialmente bloqueado (BLOCKED)
         else if (streetNum === 3 && colNum >= 3 && colNum <= 5) {
@@ -59,8 +62,8 @@ function generateWarehouseData(): WarehousePosition[] {
           status = 'ALERT';
           lastUpdated = daysAgo(120); // Item parado há 4 meses
         }
-        // Cenário 4: Ocupação normal
-        else if (level < 3 && col < 8 && streetNum < 5) {
+        // Cenário 4: Ocupação normal - Aumentando para ~60%
+        else if (Math.random() < 0.6) {
             status = 'NORMAL';
             lastUpdated = daysAgo(Math.floor(Math.random() * 30));
         }
@@ -94,8 +97,10 @@ function generateWarehouseData(): WarehousePosition[] {
   const blockPalletDepth = 1.2;
   const blockAisle = 6.0;
 
-  const lastRackX = positions[positions.length - 1].position[0];
-  const blockStartX = lastRackX + aisleWidth;
+  // Cálculo da posição inicial dos blocados baseado na última rua de racks (Rua 06)
+  const lastRackAisleIndex = positions.length - (numCols * numLevels);
+  const lastRackX = positions[lastRackAisleIndex].position[0];
+  const blockStartX = lastRackX + rackWidth + aisleWidth;
 
   // Gerar Blocados - 2 ruas com 2 quadras cada
   for (let row = 1; row <= 2; row++) {
@@ -103,7 +108,7 @@ function generateWarehouseData(): WarehousePosition[] {
       const quadStartX = blockStartX + (row - 1) * (blockPalletWidth + blockAisle);
       
       for (let i = 0; i < 10; i++) {
-        const palletId = `B${row}Q${quad}-P${i + 1}`;
+        const palletId = `B${String(row).padStart(2, '0')}Q${quad}-P${String(i + 1).padStart(2, '0')}`;
         
         let status: StatusType = 'NORMAL';
         let lastUpdated = daysAgo(Math.floor(Math.random() * 15));
@@ -113,8 +118,9 @@ function generateWarehouseData(): WarehousePosition[] {
             status = 'ALERT';
             lastUpdated = daysAgo(2);
         } else if (palletId.startsWith('B02Q02')) { // Quadra de um produto específico
-            status = 'NORMAL';
-        } else if (i > 6) { // Deixar alguns blocados vazios
+            if (i < 8) status = 'NORMAL';
+            else status = 'EMPTY';
+        } else if (Math.random() > 0.5) { // Deixar alguns blocados vazios
             status = 'EMPTY';
         }
 

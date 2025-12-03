@@ -22,8 +22,8 @@ export function FloorLines({ size }: FloorLinesProps) {
   const startZ = -15;
 
   // Re-cálculo exato da posição final dos racks para alinhar os blocados
-  const lastRackX = startX + rackWidth + aisleWidth + rackWidth * 2 + aisleWidth + rackWidth * 2 + aisleWidth;
-  const blockStartX = lastRackX + rackWidth + 4; // 4 metros de espaço
+  const lastRackX = startX + rackWidth * 2 + aisleWidth + rackWidth*2 + aisleWidth + rackWidth * 2;
+  const blockStartX = lastRackX + aisleWidth; // 4 metros de espaço
 
   // 2 ruas com 2 quadras cada
   for (let row = 1; row <= 2; row++) {
@@ -56,11 +56,11 @@ export function FloorLines({ size }: FloorLinesProps) {
   aisleLabels.push({ text: 'RUA 01/02', position: new THREE.Vector3(aisle1X, 0.1, labelZ) });
 
   // Corredor entre R3 e R4
-  const aisle2X = aisle1X + rackWidth + rackWidth / 2 + aisleWidth;
+  const aisle2X = aisle1X + rackWidth + aisleWidth;
   aisleLabels.push({ text: 'RUA 03/04', position: new THREE.Vector3(aisle2X, 0.1, labelZ) });
   
   // Corredor entre R5 e R6
-  const aisle3X = aisle2X + rackWidth + rackWidth / 2 + aisleWidth;
+  const aisle3X = aisle2X + rackWidth + aisleWidth;
   aisleLabels.push({ text: 'RUA 05/06', position: new THREE.Vector3(aisle3X, 0.1, labelZ) });
 
 
