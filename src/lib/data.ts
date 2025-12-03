@@ -12,7 +12,7 @@ function generateWarehouseData(): WarehousePosition[] {
   const numLevels = 5;
   const aisleWidth = 5.0; // Espaço entre as estruturas
 
-  const startX = -25;
+  const startX = -20; // Ajustado para centralizar
   const startZ = -15;
   let lastX = startX;
 
