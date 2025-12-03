@@ -37,7 +37,6 @@ const emptyMaterial = new THREE.MeshBasicMaterial({ color: statusColors.EMPTY, w
 
 const itemMaterial = new THREE.MeshStandardMaterial({ color: '#D2B48C', roughness: 0.7, metalness: 0.1 }); // Tan color for boxes
 const itemGeometry = new THREE.BoxGeometry(0.8, 0.8, 0.8);
-const ItemMesh = <mesh geometry={itemGeometry} />;
 
 export function InstancedStructure({ positions, floorSize }: InstancedStructureProps) {
   const { selectPosition, selectedPositionId } = useWarehouseStore();
@@ -104,7 +103,7 @@ export function InstancedStructure({ positions, floorSize }: InstancedStructureP
       </Instances>
 
       {/* Items on Racks and Floor Blocks */}
-      <Merged meshes={[ItemMesh]}>
+      <Merged meshes={[new THREE.Mesh(itemGeometry)]}>
         {(ItemBox) => (
            <group>
              {positions.filter(p => p.status !== 'EMPTY').map(p => (
