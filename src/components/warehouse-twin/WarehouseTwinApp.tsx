@@ -11,41 +11,27 @@ import { WarehouseScene } from './WarehouseScene';
 import { Leva } from 'leva';
 
 export default function WarehouseTwinApp() {
-  const { positions, setAiData, setInitialData } = useWarehouseStore();
+  const { positions, setAiData } = useWarehouseStore();
   const [loadingAi, setLoadingAi] = useState(true);
-  const isInitialLoad = useRef(true);
 
   useEffect(() => {
-    if (positions.length > 0 && isInitialLoad.current) {
-      isInitialLoad.current = false;
+    if (positions.length > 0) {
       const analyze = async () => {
         setLoadingAi(true);
-        const { performanceScore, aiSuggestions } = await runAiAnalysis(positions);
-        setAiData(performanceScore, aiSuggestions);
-        setLoadingAi(false);
+        try {
+          const { performanceScore, aiSuggestions } = await runAiAnalysis(positions);
+          setAiData(performanceScore, aiSuggestions);
+        } catch (error) {
+            console.error("Failed to run AI analysis", error);
+            setAiData(0, ["Error analyzing data."]);
+        } finally {
+            setLoadingAi(false);
+        }
       };
       analyze();
     }
   }, [positions, setAiData]);
 
-  // This effect will run on subsequent position changes (e.g., drag and drop)
-  useEffect(() => {
-    if (isInitialLoad.current) return; // Don't run on initial load
-
-    const handler = setTimeout(() => {
-      const analyze = async () => {
-        setLoadingAi(true);
-        const { performanceScore, aiSuggestions } = await runAiAnalysis(positions);
-        setAiData(performanceScore, aiSuggestions);
-        setLoadingAi(false);
-      };
-      analyze();
-    }, 1000); // Debounce for 1 second
-
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [positions, setAiData]);
 
   return (
     <div className="flex h-screen w-full flex-col bg-background">
