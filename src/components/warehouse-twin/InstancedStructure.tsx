@@ -1,8 +1,8 @@
 'use client';
 
-import { useRef, useMemo, useState, useEffect } from 'react';
+import { useRef, useMemo, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Instances, Instance, Text, Merged } from '@react-three/drei';
+import { Instances, Instance, Text } from '@react-three/drei';
 import * as THREE from 'three';
 import { useWarehouseStore } from '@/store/warehouseStore';
 import type { WarehousePosition } from '@/lib/types';
@@ -10,7 +10,6 @@ import { AlertIndicator } from './AlertIndicator';
 
 interface InstancedStructureProps {
   positions: WarehousePosition[];
-  floorSize: number;
 }
 
 const statusColors = {
@@ -23,6 +22,8 @@ const hoverColor = new THREE.Color('#06b6d4'); // cyan-500
 const selectedColor = new THREE.Color('#f59e0b'); // amber-500
 
 const boxGeometry = new THREE.BoxGeometry(1, 1, 1);
+const palletGeometry = new THREE.BoxGeometry(1.2, 0.15, 1.2);
+
 const rackMaterial = new THREE.MeshStandardMaterial({
   color: 'white',
   roughness: 0.5,
@@ -33,12 +34,10 @@ const floorMaterial = new THREE.MeshStandardMaterial({
   roughness: 0.8,
   metalness: 0.2,
 });
-const emptyMaterial = new THREE.MeshBasicMaterial({ color: statusColors.EMPTY, wireframe: true });
+const palletMaterial = new THREE.MeshStandardMaterial({ color: '#D2B48C', roughness: 0.7, metalness: 0.1 });
+const emptyMaterial = new THREE.MeshBasicMaterial({ color: statusColors.EMPTY, wireframe: true, transparent: true, opacity: 0.3 });
 
-const itemMaterial = new THREE.MeshStandardMaterial({ color: '#D2B48C', roughness: 0.7, metalness: 0.1 }); // Tan color for boxes
-const itemGeometry = new THREE.BoxGeometry(0.8, 0.8, 0.8);
-
-export function InstancedStructure({ positions, floorSize }: InstancedStructureProps) {
+export function InstancedStructure({ positions }: InstancedStructureProps) {
   const { selectPosition, selectedPositionId } = useWarehouseStore();
   const [hoveredId, setHoveredId] = useState<string | null>(null);
 
@@ -63,27 +62,22 @@ export function InstancedStructure({ positions, floorSize }: InstancedStructureP
   };
   
   return (
-    <>
+    <group>
+      {/* Racks Structures */}
+      {racks.map(pos => (
+        <RackInstance
+          key={pos.id}
+          positionData={pos}
+          isSelected={selectedPositionId === pos.id}
+          isHovered={hoveredId === pos.id}
+          onClick={(e) => handleClick(pos.id, e)}
+          onPointerOver={(e) => handlePointerOver(pos.id, e)}
+          onPointerOut={handlePointerOut}
+        />
+      ))}
+      
+      {/* Floor Blocks */}
       <Instances
-        geometry={boxGeometry}
-        material={rackMaterial}
-        castShadow
-        receiveShadow
-      >
-        {racks.map(pos => (
-          <RackInstance
-            key={pos.id}
-            positionData={pos}
-            isSelected={selectedPositionId === pos.id}
-            isHovered={hoveredId === pos.id}
-            onClick={(e) => handleClick(pos.id, e)}
-            onPointerOver={(e) => handlePointerOver(pos.id, e)}
-            onPointerOut={handlePointerOut}
-          />
-        ))}
-      </Instances>
-
-       <Instances
         geometry={boxGeometry}
         material={floorMaterial}
         castShadow
@@ -102,20 +96,31 @@ export function InstancedStructure({ positions, floorSize }: InstancedStructureP
         ))}
       </Instances>
 
-      {/* Items on Racks and Floor Blocks */}
-      <Merged meshes={[new THREE.Mesh(itemGeometry)]}>
-        {(ItemBox) => (
-           <group>
-             {positions.filter(p => p.status !== 'EMPTY').map(p => (
-              <group key={`items-${p.id}`} position={p.position as [number, number, number]}>
-                {generateItemBoxes(p).map((itemPos, i) => (
-                  <ItemBox key={i} material={itemMaterial} position={itemPos} castShadow receiveShadow />
-                ))}
-              </group>
-             ))}
-           </group>
-        )}
-      </Merged>
+      {/* Pallets for both Racks and Floor Blocks */}
+      <Instances
+        geometry={palletGeometry}
+        material={palletMaterial}
+        castShadow
+        receiveShadow
+      >
+        {positions.filter(p => p.status !== 'EMPTY' && p.items.length > 0).map(p => {
+          if (p.type === 'RACK') {
+             return <Instance key={`pallet-${p.id}`} position={[p.position[0], p.position[1] - (p.dimensions[1]/2) + 0.15/2, p.position[2]]} />
+          }
+          if (p.type === 'FLOOR_BLOCK') {
+            return p.items.map((item, index) => {
+              const [width, , depth] = p.dimensions;
+              const palletLength = 1.2;
+              const posX = p.position[0] - width/2 + palletLength/2 + index * palletLength;
+              const posY = p.position[1] + 0.15/2;
+              const posZ = p.position[2];
+
+              return <Instance key={`pallet-${p.id}-${index}`} position={[posX, posY, posZ]} rotation={p.rotation} />
+            })
+          }
+          return null;
+        })}
+      </Instances>
 
       {/* Labels and Indicators */}
       {positions.map(pos => (
@@ -123,7 +128,7 @@ export function InstancedStructure({ positions, floorSize }: InstancedStructureP
           {pos.status === 'ALERT' && <AlertIndicator offset={[0, pos.dimensions[1] / 2 + 0.5, 0]} />}
           <Text
             position={[0, pos.dimensions[1] / 2 + 0.5, 0]}
-            fontSize={0.4}
+            fontSize={0.3}
             color="white"
             anchorX="center"
             anchorY="middle"
@@ -134,67 +139,65 @@ export function InstancedStructure({ positions, floorSize }: InstancedStructureP
           </Text>
         </group>
       ))}
-    </>
+    </group>
   );
 }
 
 function RackInstance({ positionData, isSelected, isHovered, ...props }: any) {
-  const ref = useRef<THREE.InstancedMesh>(null!);
+  const groupRef = useRef<THREE.Group>(null!);
   const { id, position, dimensions, status } = positionData;
 
-  const baseColor = status === 'EMPTY' ? statusColors.EMPTY : statusColors[status as keyof typeof statusColors] || statusColors.NORMAL;
+  const baseColor = statusColors[status as keyof typeof statusColors] || statusColors.NORMAL;
+
+  const mainStructureMaterial = useRef(new THREE.MeshStandardMaterial({
+    color: baseColor,
+    metalness: 0.7,
+    roughness: 0.5,
+  })).current;
 
   useFrame(() => {
-    if (ref.current) {
-        let targetColor = baseColor;
-        if (isSelected) targetColor = selectedColor;
-        else if (isHovered) targetColor = hoverColor;
-        
-        ref.current.color.lerp(targetColor, 0.1);
-    }
+    let targetColor = baseColor;
+    if (isSelected) targetColor = selectedColor;
+    else if (isHovered) targetColor = hoverColor;
+    mainStructureMaterial.color.lerp(targetColor, 0.1);
   });
+  
+  const [beamWidth, rackHeight, rackDepth] = dimensions;
+  const uprightWidth = 0.1;
+
+  // Clickable invisible box
+  const interactionBox = <mesh {...props} visible={false}><boxGeometry args={dimensions} /></mesh>;
 
   if (status === 'EMPTY') {
     return (
-        <group position={position} {...props}>
+        <group position={position}>
+            {interactionBox}
             <mesh geometry={boxGeometry} scale={dimensions} material={emptyMaterial} />
         </group>
     )
   }
 
-  // Simplified rack structure with shelves
-  const shelfHeight = 1.25;
-  const numShelves = Math.floor(dimensions[1] / shelfHeight);
-  const shelfPositions = Array.from({ length: numShelves }, (_, i) => [
-    0,
-    -dimensions[1] / 2 + i * shelfHeight + shelfHeight / 2,
-    0,
-  ]);
-  const shelfDepth = 0.8;
-  const supportWidth = 0.1;
-
   return (
-    <group position={position} {...props}>
-      {/* Main bounding box (for interaction) */}
-      <Instance ref={ref} scale={dimensions} color={baseColor} />
-
-      {/* Visual representation */}
-      <group>
-        {/* Shelves */}
-        {shelfPositions.map((shelfPos, i) => (
-          <mesh key={i} geometry={boxGeometry} scale={[dimensions[0], 0.05, shelfDepth]} position={shelfPos as [number, number, number]}>
-            <meshStandardMaterial color="#888" roughness={0.5} metalness={0.7} />
-          </mesh>
-        ))}
-        {/* Vertical Supports */}
-        {[ -dimensions[0]/2 + supportWidth/2, dimensions[0]/2 - supportWidth/2 ].map(x => (
-            [ -shelfDepth/2 + supportWidth/2, shelfDepth/2 - supportWidth/2 ].map(z => (
-                <mesh key={`${x}-${z}`} geometry={boxGeometry} scale={[supportWidth, dimensions[1], supportWidth]} position={[x, 0, z]}>
-                    <meshStandardMaterial color="#555" roughness={0.5} metalness={0.7} />
-                </mesh>
-            ))
-        ))}
-      </group>
+    <group ref={groupRef} position={position}>
+      {interactionBox}
+      {/* Uprights (Pés) */}
+      {[ -beamWidth / 2 + uprightWidth / 2, beamWidth / 2 - uprightWidth / 2 ].map(x => (
+          [ -rackDepth / 2 + uprightWidth / 2, rackDepth / 2 - uprightWidth / 2 ].map(z => (
+              <mesh key={`${x}-${z}`} castShadow receiveShadow material={mainStructureMaterial}>
+                  <boxGeometry args={[uprightWidth, rackHeight, uprightWidth]} />
+                  <position x={x} y={0} z={z} />
+              </mesh>
+          ))
+      ))}
+      {/* Beams (Longarinas) */}
+      {[-rackHeight/2 + 0.05, rackHeight/2 - 0.05].map(y => (
+        [-rackDepth/2 + uprightWidth/2, rackDepth/2-uprightWidth/2].map(z => (
+            <mesh key={`${y}-${z}`} castShadow receiveShadow material={mainStructureMaterial} >
+              <boxGeometry args={[beamWidth, 0.1, 0.1]} />
+              <position y={y} z={z} />
+            </mesh>
+        ))
+      ))}
     </group>
   );
 }
@@ -224,33 +227,4 @@ function FloorBlockInstance({ positionData, isSelected, isHovered, ...props }: a
   }
 
   return <Instance ref={ref} position={position} scale={dimensions} color={baseColor} {...props} />;
-}
-
-// Helper to generate positions for item boxes
-function generateItemBoxes(p: WarehousePosition): [number, number, number][] {
-    const boxes: [number, number, number][] = [];
-    if (p.status === 'EMPTY' || p.occupancyPercentage === 0) return boxes;
-
-    const [width, height, depth] = p.dimensions;
-    const boxSize = 0.8;
-    const numX = Math.floor(width / boxSize);
-    const numY = Math.floor(height / boxSize);
-    const numZ = Math.floor(depth / (p.type === 'RACK' ? 0.8 : boxSize));
-
-    const totalPossible = numX * numY * numZ;
-    const numToCreate = Math.min(totalPossible, Math.ceil(totalPossible * (p.occupancyPercentage / 100)));
-
-    let count = 0;
-    for (let y = 0; y < numY && count < numToCreate; y++) {
-        for (let x = 0; x < numX && count < numToCreate; x++) {
-            for (let z = 0; z < numZ && count < numToCreate; z++) {
-                const posX = -width / 2 + boxSize / 2 + x * boxSize;
-                const posY = -height / 2 + boxSize / 2 + y * boxSize;
-                const posZ = -depth / 2 + boxSize / 2 + z * boxSize;
-                boxes.push([posX, posY, posZ]);
-                count++;
-            }
-        }
-    }
-    return boxes;
 }

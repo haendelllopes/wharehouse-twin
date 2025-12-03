@@ -46,8 +46,8 @@ export type AiInsightsInput = z.infer<typeof AiInsightsInputSchema>;
 
 // Define the output schema for the AI insights flow
 const AiInsightsOutputSchema = z.object({
-  performanceScore: z.number().describe('Overall warehouse performance score (0-100)'),
-  aiSuggestions: z.array(z.string()).describe('List of AI-generated suggestions for improvement'),
+  performanceScore: z.number().describe('Pontuação geral de desempenho do armazém (0-100)'),
+  aiSuggestions: z.array(z.string()).describe('Lista de sugestões geradas por IA para melhoria'),
 });
 export type AiInsightsOutput = z.infer<typeof AiInsightsOutputSchema>;
 
@@ -69,19 +69,19 @@ const aiInsightsPrompt = ai.definePrompt({
   name: 'aiInsightsPrompt',
   input: {schema: AiInsightsInputSchema},
   output: {schema: AiInsightsOutputSchema},
-  prompt: `You are an AI assistant that analyzes warehouse data and provides insights for optimization.
+  prompt: `Você é um assistente de IA que analisa dados de armazém e fornece insights para otimização em Português do Brasil.
 
-  Analyze the following warehouse data and provide:
-  1. An overall warehouse performance score (0-100), considering factors like occupancy, utilization, and potential bottlenecks.
-  2. A list of AI-generated suggestions for improving warehouse efficiency, such as identifying underutilized areas or potential bottlenecks.
+  Analise os seguintes dados do armazém e forneça:
+  1. Uma pontuação geral de desempenho do armazém (0-100), considerando fatores como ocupação, utilização e possíveis gargalos.
+  2. Uma lista de sugestões geradas por IA para melhorar a eficiência do armazém, como identificar áreas subutilizadas ou possíveis gargalos.
 
-  Warehouse Data:
+  Dados do Armazém:
   {{#each positions}}
-  - Position ID: {{id}}, Code: {{code}}, Type: {{type}}, Occupancy: {{occupancyPercentage}}%, Status: {{status}}
+  - Posição ID: {{id}}, Código: {{code}}, Tipo: {{type}}, Ocupação: {{occupancyPercentage}}%, Status: {{status}}
   {{/each}}
 
-  Ensure the suggestions are specific and actionable.
-  Please provide the output in JSON format.
+  Garanta que as sugestões sejam específicas e acionáveis.
+  Forneça a saída em formato JSON.
 `,
 });
 

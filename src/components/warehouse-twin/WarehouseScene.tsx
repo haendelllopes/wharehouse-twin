@@ -7,12 +7,11 @@ import { useWarehouseStore } from '@/store/warehouseStore';
 
 import { Floor } from './Floor';
 import { InstancedStructure } from './InstancedStructure';
-import { WarehouseWalls } from './WarehouseWalls';
 import { useControls } from 'leva';
 import { useEffect } from 'react';
 import { FloorLines } from './FloorLines';
 
-const FLOOR_SIZE = 50;
+const FLOOR_SIZE = 60;
 const WALL_HEIGHT = 10;
 
 export function WarehouseScene() {
@@ -34,31 +33,30 @@ export function WarehouseScene() {
       <Canvas 
         ref={canvasRef}
         shadows 
-        camera={{ position: [30, 30, 30], fov: 45 }}
+        camera={{ position: [35, 35, 35], fov: 45 }}
         gl={{ preserveDrawingBuffer: true, antialias: true }}
       >
         <Suspense fallback={null}>
           <fog attach="fog" args={['#a0a0a0', 50, 150]} />
-          <ambientLight intensity={0.8} />
+          <ambientLight intensity={1.2} />
           <directionalLight
             position={[10, 20, 5]}
             intensity={1.5}
             castShadow
             shadow-mapSize-width={2048}
             shadow-mapSize-height={2048}
-            shadow-camera-far={70}
+            shadow-camera-far={80}
             shadow-camera-left={-FLOOR_SIZE/2}
             shadow-camera-right={FLOOR_SIZE/2}
             shadow-camera-top={FLOOR_SIZE/2}
             shadow-camera-bottom={-FLOOR_SIZE/2}
           />
-          <OrbitControls makeDefault minDistance={10} maxDistance={100} maxPolarAngle={Math.PI / 2.2}/>
+          <OrbitControls makeDefault minDistance={10} maxDistance={100} maxPolarAngle={Math.PI / 2.1}/>
 
           <Floor size={FLOOR_SIZE} />
           <FloorLines size={FLOOR_SIZE} />
-          <WarehouseWalls size={FLOOR_SIZE} height={WALL_HEIGHT} />
           
-          <InstancedStructure positions={positions} floorSize={FLOOR_SIZE} />
+          <InstancedStructure positions={positions} />
 
         </Suspense>
         {showStats && <Stats />}

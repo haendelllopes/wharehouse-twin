@@ -1,101 +1,111 @@
 import type { WarehousePosition } from './types';
 
-export const initialWarehouseData: WarehousePosition[] = [
-  {
-    id: 'rack-a1',
-    code: 'R-A-01-1',
-    type: 'RACK',
-    position: [-10, 2.5, -5],
-    rotation: [0, 0, 0],
-    dimensions: [4, 5, 1],
-    occupancyPercentage: 85,
-    status: 'NORMAL',
-    items: [
-      { sku: 'SKU-001', description: 'Heavy Machinery Parts', quantity: 50 },
-      { sku: 'SKU-002', description: 'Electronic Components', quantity: 200 },
-    ],
-    lastUpdated: new Date().toISOString(),
-  },
-  {
-    id: 'rack-a2',
-    code: 'R-A-02-1',
-    type: 'RACK',
-    position: [-10, 2.5, 0],
-    rotation: [0, 0, 0],
-    dimensions: [4, 5, 1],
-    occupancyPercentage: 95,
-    status: 'ALERT',
-    items: [
-      { sku: 'SKU-003', description: 'Finished Goods - A', quantity: 150 },
-    ],
-    lastUpdated: new Date().toISOString(),
-  },
-  {
-    id: 'rack-a3',
-    code: 'R-A-03-1',
-    type: 'RACK',
-    position: [-10, 2.5, 5],
-    rotation: [0, 0, 0],
-    dimensions: [4, 5, 1],
-    occupancyPercentage: 0,
-    status: 'EMPTY',
-    items: [],
-    lastUpdated: new Date().toISOString(),
-  },
-  {
-    id: 'floor-b1',
-    code: 'F-B-01',
-    type: 'FLOOR_BLOCK',
-    position: [0, 0.1, -5],
-    rotation: [0, 0, 0],
-    dimensions: [5, 0.2, 5],
-    occupancyPercentage: 50,
-    status: 'NORMAL',
-    items: [
-      { sku: 'SKU-004', description: 'Palletized Raw Materials', quantity: 5, lpn: 'LPN-B1-001' },
-    ],
-    lastUpdated: new Date().toISOString(),
-  },
-  {
-    id: 'floor-b2',
-    code: 'F-B-02',
-    type: 'FLOOR_BLOCK',
-    position: [0, 0.1, 5],
-    rotation: [0, 0, 0],
-    dimensions: [5, 0.2, 5],
-    occupancyPercentage: 100,
-    status: 'BLOCKED',
-    items: [
-      { sku: 'SKU-005', description: 'Goods for QC', quantity: 10, lpn: 'LPN-B2-001' },
-    ],
-    lastUpdated: new Date().toISOString(),
-  },
-    {
-    id: 'rack-c1',
-    code: 'R-C-01-1',
-    type: 'RACK',
-    position: [10, 2.5, -5],
-    rotation: [0, 0, 0],
-    dimensions: [4, 5, 1],
-    occupancyPercentage: 110,
-    status: 'ALERT',
-    items: [
-      { sku: 'SKU-006', description: 'Overstocked items', quantity: 250 },
-    ],
-    lastUpdated: new Date().toISOString(),
-  },
-  {
-    id: 'rack-c2',
-    code: 'R-C-02-1',
-    type: 'RACK',
-    position: [10, 2.5, 0],
-    rotation: [0, 0, 0],
-    dimensions: [4, 5, 1],
-    occupancyPercentage: 20,
-    status: 'NORMAL',
-    items: [
-      { sku: 'SKU-007', description: 'Fast-moving consumer goods', quantity: 30 },
-    ],
-    lastUpdated: new Date().toISOString(),
-  },
-];
+function generateWarehouseData(): WarehousePosition[] {
+  const positions: WarehousePosition[] = [];
+  const aisleWidth = 5.5;
+  const rackDepth = 1.2;
+  const rackWidth = 1.2;
+  const rackHeight = 1.2;
+  const numAisles = 6;
+  const numCols = 10;
+  const numLevels = 5;
+
+  const startX = -25;
+  const startZ = -15;
+
+  // Generate Racks (Porta Paletes)
+  for (let aisle = 1; aisle <= numAisles; aisle++) {
+    let aisleStartX = startX + (aisle - 1) * (rackWidth + aisleWidth);
+    if (aisle > 2) aisleStartX -= aisleWidth - rackDepth * 2;
+    if (aisle > 4) aisleStartX -= aisleWidth - rackDepth * 2;
+
+    for (let col = 1; col <= numCols; col++) {
+      for (let level = 1; level <= numLevels; level++) {
+        // Rack on the left side of the aisle
+        if (aisle % 2 !== 0 || aisle === 1) {
+          const id = `R${String(aisle).padStart(2, '0')}-${String(col).padStart(2, '0')}-${level}`;
+          const occupancy = Math.random() * 100;
+          positions.push({
+            id: `rack-left-${id}`,
+            code: `P-${id}`,
+            type: 'RACK',
+            position: [
+              aisleStartX - rackDepth / 2,
+              (level - 1) * rackHeight + rackHeight / 2,
+              startZ + (col - 1) * rackWidth + rackWidth/2,
+            ],
+            rotation: [0, 0, 0],
+            dimensions: [rackDepth, rackHeight, rackWidth],
+            occupancyPercentage: occupancy,
+            status: occupancy > 95 ? 'ALERT' : occupancy < 5 ? 'EMPTY' : 'NORMAL',
+            items: occupancy < 5 ? [] : [{ sku: `SKU-${id}-L`, description: 'Item em palete', quantity: 1, lpn: `LPN-${id}-L` }],
+            lastUpdated: new Date().toISOString(),
+          });
+        }
+
+        // Rack on the right side of the aisle
+        if (aisle % 2 === 0 || aisle === numAisles) {
+          let rightAisleX = aisleStartX + aisleWidth + rackDepth;
+           if (aisle === 2 || aisle === 4) rightAisleX = aisleStartX + rackDepth;
+
+          const id = `R${String(aisle + 1).padStart(2, '0')}-${String(col).padStart(2, '0')}-${level}`;
+           positions.push({
+            id: `rack-right-${id}`,
+            code: `P-${id}`,
+            type: 'RACK',
+            position: [
+              rightAisleX - rackDepth / 2,
+              (level - 1) * rackHeight + rackHeight / 2,
+              startZ + (col-1) * rackWidth + rackWidth/2,
+            ],
+            rotation: [0, 0, 0],
+            dimensions: [rackDepth, rackHeight, rackWidth],
+            occupancyPercentage: 70,
+            status: 'NORMAL',
+            items: [{ sku: `SKU-${id}-R`, description: 'Item em palete', quantity: 1, lpn: `LPN-${id}-R` }],
+            lastUpdated: new Date().toISOString(),
+          });
+        }
+      }
+    }
+  }
+
+  // Generate Floor Blocks (Blocados)
+  const blockWidth = 1.2;
+  const blockLength = 12; // 10 pallets * 1.2m
+  const blockAisle = 6;
+  const blockStartZ = startZ + numCols * rackWidth + 10;
+
+  for (let row = 1; row <= 2; row++) {
+      for (let quad = 1; quad <= 2; quad++) {
+          const id = `B${row}-Q${quad}`;
+          const occupancy = Math.random() * 100;
+          positions.push({
+            id: `floor-${id}`,
+            code: id,
+            type: 'FLOOR_BLOCK',
+            position: [
+                -15 + (row-1) * (blockLength + blockAisle) + blockLength / 2,
+                0.1,
+                blockStartZ + (quad-1) * (blockWidth + 2)
+            ],
+            rotation: [0, Math.PI / 2, 0],
+            dimensions: [blockLength, 0.2, blockWidth],
+            occupancyPercentage: occupancy,
+            status: occupancy > 98 ? 'BLOCKED' : 'NORMAL',
+            items: Array.from({length: Math.floor(occupancy / 10)}).map((_, i) => ({
+                sku: `SKU-B-${id}-${i}`,
+                description: 'Palete blocado',
+                quantity: 1,
+                lpn: `LPN-B-${id}-${i}`
+            })),
+            lastUpdated: new Date().toISOString(),
+          });
+      }
+  }
+
+  return positions;
+}
+
+
+export const initialWarehouseData: WarehousePosition[] = generateWarehouseData();
