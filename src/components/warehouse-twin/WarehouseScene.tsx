@@ -11,8 +11,7 @@ import { useControls } from 'leva';
 import { useEffect } from 'react';
 import { FloorLines } from './FloorLines';
 
-const FLOOR_SIZE = 60;
-const WALL_HEIGHT = 10;
+const FLOOR_SIZE = 70;
 
 export function WarehouseScene() {
   const { positions, setCanvasRef } = useWarehouseStore();
@@ -33,19 +32,19 @@ export function WarehouseScene() {
       <Canvas 
         ref={canvasRef}
         shadows 
-        camera={{ position: [35, 35, 35], fov: 45 }}
+        camera={{ position: [0, 45, 45], fov: 45 }}
         gl={{ preserveDrawingBuffer: true, antialias: true }}
       >
         <Suspense fallback={null}>
-          <fog attach="fog" args={['#a0a0a0', 50, 150]} />
-          <ambientLight intensity={1.2} />
+          <fog attach="fog" args={['#a0a0a0', 70, 150]} />
+          <ambientLight intensity={1.5} />
           <directionalLight
-            position={[10, 20, 5]}
-            intensity={1.5}
+            position={[10, 30, 20]}
+            intensity={2.5}
             castShadow
-            shadow-mapSize-width={2048}
-            shadow-mapSize-height={2048}
-            shadow-camera-far={80}
+            shadow-mapSize-width={4096}
+            shadow-mapSize-height={4096}
+            shadow-camera-far={100}
             shadow-camera-left={-FLOOR_SIZE/2}
             shadow-camera-right={FLOOR_SIZE/2}
             shadow-camera-top={FLOOR_SIZE/2}

@@ -2,110 +2,108 @@ import type { WarehousePosition } from './types';
 
 function generateWarehouseData(): WarehousePosition[] {
   const positions: WarehousePosition[] = [];
-  const aisleWidth = 5.5;
+  
+  // --- Configurações dos Porta-Paletes ---
   const rackDepth = 1.2;
   const rackWidth = 1.2;
   const rackHeight = 1.2;
   const numAisles = 6;
   const numCols = 10;
   const numLevels = 5;
+  const aisleWidth = 5.0; // Espaço entre as estruturas
 
   const startX = -25;
-  const startZ = -15;
+  const startZ = -25;
 
-  // Generate Racks (Porta Paletes)
-  for (let aisle = 1; aisle <= numAisles; aisle++) {
-    let aisleStartX = startX + (aisle - 1) * (rackWidth + aisleWidth);
-    if (aisle > 2) aisleStartX -= aisleWidth - rackDepth * 2;
-    if (aisle > 4) aisleStartX -= aisleWidth - rackDepth * 2;
+  // Gerar Porta-Paletes (Racks)
+  for (let aisleIndex = 0; aisleIndex < numAisles; aisleIndex++) {
+    let currentX;
+    const isDoubleAisle = aisleIndex === 1 || aisleIndex === 3; // Corredores 2/3 e 4/5 são duplos
 
-    for (let col = 1; col <= numCols; col++) {
-      for (let level = 1; level <= numLevels; level++) {
-        // Rack on the left side of the aisle
-        if (aisle % 2 !== 0 || aisle === 1) {
-          const id = `R${String(aisle).padStart(2, '0')}-${String(col).padStart(2, '0')}-${level}`;
-          const occupancy = Math.random() * 100;
-          positions.push({
-            id: `rack-left-${id}`,
-            code: `P-${id}`,
-            type: 'RACK',
-            position: [
-              aisleStartX - rackDepth / 2,
-              (level - 1) * rackHeight + rackHeight / 2,
-              startZ + (col - 1) * rackWidth + rackWidth/2,
-            ],
-            rotation: [0, 0, 0],
-            dimensions: [rackDepth, rackHeight, rackWidth],
-            occupancyPercentage: occupancy,
-            status: occupancy > 95 ? 'ALERT' : occupancy < 5 ? 'EMPTY' : 'NORMAL',
-            items: occupancy < 5 ? [] : [{ sku: `SKU-${id}-L`, description: 'Item em palete', quantity: 1, lpn: `LPN-${id}-L` }],
-            lastUpdated: new Date().toISOString(),
-          });
-        }
-
-        // Rack on the right side of the aisle
-        if (aisle % 2 === 0 || aisle === numAisles) {
-          let rightAisleX = aisleStartX + aisleWidth + rackDepth;
-           if (aisle === 2 || aisle === 4) rightAisleX = aisleStartX + rackDepth;
-
-          const id = `R${String(aisle + 1).padStart(2, '0')}-${String(col).padStart(2, '0')}-${level}`;
-           positions.push({
-            id: `rack-right-${id}`,
-            code: `P-${id}`,
-            type: 'RACK',
-            position: [
-              rightAisleX - rackDepth / 2,
-              (level - 1) * rackHeight + rackHeight / 2,
-              startZ + (col-1) * rackWidth + rackWidth/2,
-            ],
-            rotation: [0, 0, 0],
-            dimensions: [rackDepth, rackHeight, rackWidth],
-            occupancyPercentage: 70,
-            status: 'NORMAL',
-            items: [{ sku: `SKU-${id}-R`, description: 'Item em palete', quantity: 1, lpn: `LPN-${id}-R` }],
-            lastUpdated: new Date().toISOString(),
-          });
-        }
+    if (aisleIndex === 0) { // Rua 1
+      currentX = startX;
+    } else if (aisleIndex === 1) { // Rua 2
+      currentX = startX + rackWidth + aisleWidth;
+    } else if (aisleIndex === 2) { // Rua 3 (encostado na Rua 2)
+      currentX = startX + rackWidth + aisleWidth + rackWidth;
+    } else if (aisleIndex === 3) { // Rua 4
+      currentX = startX + rackWidth + aisleWidth + rackWidth + rackWidth + aisleWidth;
+    } else if (aisleIndex === 4) { // Rua 5 (encostado na Rua 4)
+      currentX = startX + rackWidth + aisleWidth + rackWidth + rackWidth + aisleWidth + rackWidth;
+    } else { // Rua 6
+      currentX = startX + rackWidth + aisleWidth + rackWidth + rackWidth + aisleWidth + rackWidth + rackWidth + aisleWidth;
+    }
+    
+    for (let col = 0; col < numCols; col++) {
+      for (let level = 0; level < numLevels; level++) {
+        const isOccupied = Math.random() < 0.7; // 70% de ocupação
+        const streetNum = aisleIndex + 1;
+        const colNum = col + 1;
+        const levelNum = level + 1;
+        const id = `R${String(streetNum).padStart(2, '0')}-C${String(colNum).padStart(2, '0')}-L${levelNum}`;
+        
+        positions.push({
+          id,
+          code: id,
+          type: 'RACK',
+          position: [
+            currentX,
+            level * rackHeight + rackHeight / 2,
+            startZ + col * rackDepth + rackDepth / 2,
+          ],
+          rotation: [0, 0, 0],
+          dimensions: [rackWidth, rackHeight, rackDepth],
+          occupancyPercentage: isOccupied ? 100 : 0,
+          status: isOccupied ? (Math.random() < 0.05 ? 'ALERT' : 'NORMAL') : 'EMPTY',
+          items: isOccupied ? [{ sku: `SKU-${id}`, description: 'Item em palete', quantity: 1, lpn: `LPN-${id}` }] : [],
+          lastUpdated: new Date().toISOString(),
+        });
       }
     }
   }
 
-  // Generate Floor Blocks (Blocados)
+  // --- Configurações dos Blocados ---
   const blockWidth = 1.2;
-  const blockLength = 12; // 10 pallets * 1.2m
+  const blockLength = 12; // 10 paletes * 1.2m
   const blockAisle = 6;
-  const blockStartZ = startZ + numCols * rackWidth + 10;
+  const blockStartZ = 15;
+  const blockHeight = 1.2;
 
+  // Gerar Blocados
   for (let row = 1; row <= 2; row++) {
       for (let quad = 1; quad <= 2; quad++) {
           const id = `B${row}-Q${quad}`;
-          const occupancy = Math.random() * 100;
-          positions.push({
-            id: `floor-${id}`,
-            code: id,
-            type: 'FLOOR_BLOCK',
-            position: [
-                -15 + (row-1) * (blockLength + blockAisle) + blockLength / 2,
-                0.1,
-                blockStartZ + (quad-1) * (blockWidth + 2)
-            ],
-            rotation: [0, Math.PI / 2, 0],
-            dimensions: [blockLength, 0.2, blockWidth],
-            occupancyPercentage: occupancy,
-            status: occupancy > 98 ? 'BLOCKED' : 'NORMAL',
-            items: Array.from({length: Math.floor(occupancy / 10)}).map((_, i) => ({
-                sku: `SKU-B-${id}-${i}`,
-                description: 'Palete blocado',
-                quantity: 1,
-                lpn: `LPN-B-${id}-${i}`
-            })),
-            lastUpdated: new Date().toISOString(),
-          });
+          // Um blocado é uma coleção de posições de paletes
+          for (let i = 0; i < 10; i++) {
+            const palletId = `${id}-P${i+1}`;
+            const isOccupied = Math.random() < 0.7;
+            
+            positions.push({
+              id: palletId,
+              code: palletId,
+              type: 'FLOOR_BLOCK',
+              position: [
+                  -15 + (row-1) * (blockLength + blockAisle) + i * blockWidth + blockWidth / 2,
+                  blockHeight / 2,
+                  blockStartZ + (quad-1) * (blockWidth + 2.8)
+              ],
+              rotation: [0, 0, 0],
+              dimensions: [blockWidth, blockHeight, blockWidth],
+              occupancyPercentage: isOccupied ? 100 : 0,
+              status: isOccupied ? 'NORMAL' : 'EMPTY',
+              items: isOccupied ? [{
+                  sku: `SKU-${palletId}`,
+                  description: 'Palete blocado',
+                  quantity: 1,
+                  lpn: `LPN-${palletId}`
+              }] : [],
+              lastUpdated: new Date().toISOString(),
+            });
+          }
       }
   }
 
   return positions;
 }
-
 
 export const initialWarehouseData: WarehousePosition[] = generateWarehouseData();
