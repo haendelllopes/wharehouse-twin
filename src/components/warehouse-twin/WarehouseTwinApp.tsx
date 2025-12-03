@@ -20,8 +20,13 @@ export default function WarehouseTwinApp() {
       const analyze = async () => {
         setLoadingAi(true);
         try {
-          const { performanceScore, aiSuggestions } = await runAiAnalysis(positions);
-          setAiData(performanceScore, aiSuggestions);
+          const result = await runAiAnalysis(positions);
+          if (result) {
+            const { performanceScore, aiSuggestions } = result;
+            setAiData(performanceScore, aiSuggestions);
+          } else {
+             throw new Error("AI analysis returned undefined");
+          }
         } catch (error) {
             console.error("Failed to run AI analysis", error);
             setAiData(0, ["Erro ao analisar os dados."]);
