@@ -145,7 +145,7 @@ export function InstancedStructure({ positions }: InstancedStructureProps) {
 
 function RackInstance({ positionData, isSelected, isHovered, ...props }: any) {
   const groupRef = useRef<THREE.Group>(null!);
-  const { id, position, dimensions, status } = positionData;
+  const { position, dimensions, status } = positionData;
 
   const baseColor = statusColors[status as keyof typeof statusColors] || statusColors.NORMAL;
 
@@ -170,31 +170,28 @@ function RackInstance({ positionData, isSelected, isHovered, ...props }: any) {
 
   if (status === 'EMPTY') {
     return (
-        <group position={position}>
-            {interactionBox}
+        <group position={position} {...props}>
             <mesh geometry={boxGeometry} scale={dimensions} material={emptyMaterial} />
         </group>
     )
   }
 
   return (
-    <group ref={groupRef} position={position}>
+    <group ref={groupRef} position={position} {...props}>
       {interactionBox}
       {/* Uprights (Pés) */}
       {[ -beamWidth / 2 + uprightWidth / 2, beamWidth / 2 - uprightWidth / 2 ].map(x => (
           [ -rackDepth / 2 + uprightWidth / 2, rackDepth / 2 - uprightWidth / 2 ].map(z => (
-              <mesh key={`${x}-${z}`} castShadow receiveShadow material={mainStructureMaterial}>
+              <mesh key={`${x}-${z}`} castShadow receiveShadow material={mainStructureMaterial} position={[x, 0, z]}>
                   <boxGeometry args={[uprightWidth, rackHeight, uprightWidth]} />
-                  <position x={x} y={0} z={z} />
               </mesh>
           ))
       ))}
       {/* Beams (Longarinas) */}
       {[-rackHeight/2 + 0.05, rackHeight/2 - 0.05].map(y => (
         [-rackDepth/2 + uprightWidth/2, rackDepth/2-uprightWidth/2].map(z => (
-            <mesh key={`${y}-${z}`} castShadow receiveShadow material={mainStructureMaterial} >
+            <mesh key={`${y}-${z}`} castShadow receiveShadow material={mainStructureMaterial} position={[0, y, z]} >
               <boxGeometry args={[beamWidth, 0.1, 0.1]} />
-              <position y={y} z={z} />
             </mesh>
         ))
       ))}
