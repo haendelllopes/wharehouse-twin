@@ -156,8 +156,8 @@ function RackInstance({ positionData, isSelected, isHovered, ...props }: any) {
 
   if (status === 'EMPTY') {
     return (
-        <group position={position}>
-            <Box args={dimensions} material={emptyMaterial} {...props} />
+        <group position={position} {...props}>
+            <mesh args={[dimensions]} material={emptyMaterial} />
         </group>
     )
   }
@@ -182,16 +182,16 @@ function RackInstance({ positionData, isSelected, isHovered, ...props }: any) {
       <group>
         {/* Shelves */}
         {shelfPositions.map((shelfPos, i) => (
-          <Box key={i} args={[dimensions[0], 0.05, shelfDepth]} position={shelfPos as [number, number, number]}>
+          <mesh key={i} geometry={boxGeometry} scale={[dimensions[0], 0.05, shelfDepth]} position={shelfPos as [number, number, number]}>
             <meshStandardMaterial color="#888" roughness={0.5} metalness={0.7} />
-          </Box>
+          </mesh>
         ))}
         {/* Vertical Supports */}
         {[ -dimensions[0]/2 + supportWidth/2, dimensions[0]/2 - supportWidth/2 ].map(x => (
             [ -shelfDepth/2 + supportWidth/2, shelfDepth/2 - supportWidth/2 ].map(z => (
-                <Box key={`${x}-${z}`} args={[supportWidth, dimensions[1], supportWidth]} position={[x, 0, z]}>
+                <mesh key={`${x}-${z}`} geometry={boxGeometry} scale={[supportWidth, dimensions[1], supportWidth]} position={[x, 0, z]}>
                     <meshStandardMaterial color="#555" roughness={0.5} metalness={0.7} />
-                </Box>
+                </mesh>
             ))
         ))}
       </group>
@@ -217,8 +217,8 @@ function FloorBlockInstance({ positionData, isSelected, isHovered, ...props }: a
 
   if (status === 'EMPTY') {
     return (
-        <group position={position}>
-            <Box args={dimensions} material={emptyMaterial} {...props} />
+        <group position={position} {...props}>
+            <mesh geometry={boxGeometry} scale={dimensions} material={emptyMaterial} />
         </group>
     )
   }
