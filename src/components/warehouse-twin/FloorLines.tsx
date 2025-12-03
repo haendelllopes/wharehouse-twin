@@ -9,10 +9,11 @@ interface FloorLinesProps {
 
 export function FloorLines({ size }: FloorLinesProps) {
   const lines = [];
+  const linePoints: [number, number, number][][] = [];
 
   // --- Demarcações dos blocados com faixas amarelas ---
-  const blockWidth = 1.2;
-  const blockLength = 12; // 10 paletes * 1.2m
+  const blockWidth = 1.2; // Largura do palete (e da área do blocado)
+  const blockLength = 12; // Comprimento total da área (10 paletes * 1.2m)
   const blockAisle = 6;
   const rackWidth = 1.2;
   const aisleWidth = 5.0;
@@ -21,29 +22,33 @@ export function FloorLines({ size }: FloorLinesProps) {
   const startX = -20;
   const startZ = -15;
 
-  // Re-cálculo exato da posição final dos racks para alinhar os blocados
-  const lastRackX = startX + rackWidth * 2 + aisleWidth + rackWidth*2 + aisleWidth + rackWidth * 2;
-  const blockStartX = lastRackX + aisleWidth; // 4 metros de espaço
+  // Re-cálculo da posição inicial X dos blocados (MESMA LÓGICA DE data.ts)
+  const lastRackX = startX + rackWidth + aisleWidth + rackWidth + aisleWidth + rackWidth; // X da RUA 06
+  const blockStartX = lastRackX + aisleWidth;
 
   // 2 ruas com 2 quadras cada
   for (let row = 1; row <= 2; row++) {
     for (let quad = 1; quad <= 2; quad++) {
-      const quadX = blockStartX + (row - 1) * (blockWidth + blockAisle);
-      const quadZ = startZ + (quad - 1) * (blockLength + 4); // 10 paletes de 1.2 + 4m de espaço
+      // Centro X da rua de blocados
+      const quadCenterX = blockStartX + (row - 1) * (blockWidth + blockAisle);
+      
+      // Centro Z da quadra de blocados
+      const quadStartStackZ = startZ + (quad - 1) * (blockLength + 4);
+      const quadCenterZ = quadStartStackZ + (blockLength / 2) - (blockWidth / 2);
 
-      const startLineX = quadX - blockWidth / 2;
-      const endLineX = quadX + blockWidth / 2;
-      const startLineZ = quadZ - blockWidth / 2;
-      const endLineZ = quadZ + blockLength - blockWidth / 2;
-
+      // Calcula os cantos a partir do centro
+      const startLineX = quadCenterX - blockWidth / 2;
+      const endLineX = quadCenterX + blockWidth / 2;
+      const startLineZ = quadCenterZ - blockLength / 2;
+      const endLineZ = quadCenterZ + blockLength / 2;
+      
       const blockLines = [
-        // Retângulo amarelo
-        [[startLineX, 0.01, startLineZ], [endLineX, 0.01, startLineZ]],
-        [[startLineX, 0.01, endLineZ], [endLineX, 0.01, endLineZ]],
-        [[startLineX, 0.01, startLineZ], [startLineX, 0.01, endLineZ]],
-        [[endLineX, 0.01, startLineZ], [endLineX, 0.01, endLineZ]],
+        [[startLineX, 0.01, startLineZ], [endLineX, 0.01, startLineZ]], // Topo
+        [[startLineX, 0.01, endLineZ], [endLineX, 0.01, endLineZ]],     // Fundo
+        [[startLineX, 0.01, startLineZ], [startLineX, 0.01, endLineZ]], // Esquerda
+        [[endLineX, 0.01, startLineZ], [endLineX, 0.01, endLineZ]],     // Direita
       ];
-      lines.push(...blockLines);
+      linePoints.push(...blockLines);
     }
   }
 
@@ -52,24 +57,23 @@ export function FloorLines({ size }: FloorLinesProps) {
   const labelZ = startZ - 2; // Posição Z para os labels
   
   // Corredor entre R1 e R2
-  const aisle1X = startX + rackWidth + aisleWidth / 2;
+  const aisle1X = startX + rackWidth / 2 + aisleWidth / 2;
   aisleLabels.push({ text: 'RUA 01/02', position: new THREE.Vector3(aisle1X, 0.1, labelZ) });
 
   // Corredor entre R3 e R4
-  const aisle2X = aisle1X + rackWidth + aisleWidth;
+  const aisle2X = aisle1X + rackWidth / 2 + aisleWidth + rackWidth / 2;
   aisleLabels.push({ text: 'RUA 03/04', position: new THREE.Vector3(aisle2X, 0.1, labelZ) });
   
   // Corredor entre R5 e R6
-  const aisle3X = aisle2X + rackWidth + aisleWidth;
+  const aisle3X = aisle2X + rackWidth / 2 + aisleWidth + rackWidth / 2;
   aisleLabels.push({ text: 'RUA 05/06', position: new THREE.Vector3(aisle3X, 0.1, labelZ) });
 
 
   return (
     <group>
-      {lines.map((points, i) => (
+      {linePoints.map((points, i) => (
         <Line
           key={`line-${i}`}
-          // @ts-ignore
           points={points}
           color="yellow"
           lineWidth={3}
