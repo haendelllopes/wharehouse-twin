@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Download, FileText, Loader2, Bot, X } from 'lucide-react';
+import { Download, FileText, Loader2, Bot, X, Lightbulb } from 'lucide-react';
 import { exportToPdf, exportToXlsx } from '@/lib/reports';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -70,44 +70,53 @@ export function AiDashboard({ loading }: AiDashboardProps) {
           <Bot className="h-6 w-6 text-primary" />
         </Button>
       </SheetTrigger>
-      <SheetContent side="left" className="w-full max-w-sm">
+      <SheetContent side="left" className="w-full max-w-md bg-card">
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
             Insights de Performance da IA
             {loading && <Loader2 className="h-5 w-5 animate-spin text-primary" />}
           </SheetTitle>
           <SheetDescription>
-            Pontuação: <span className="font-bold text-accent">{performanceScore.toFixed(1)}</span> / 100
+            Pontuação de Eficiência: <span className="font-bold text-accent">{performanceScore.toFixed(1)}</span> / 100
           </SheetDescription>
         </SheetHeader>
         <div className="py-4">
-          <p className="mb-2 text-sm font-medium text-foreground">Sugestões</p>
-          <ScrollArea className="h-64 rounded-md border p-2">
-            {aiSuggestions.length > 0 && !loading ? (
-              <ul className="space-y-2 text-sm">
-                {aiSuggestions.map((suggestion, index) => (
-                  <li key={index} className="flex items-start gap-2">
-                    <span className="mt-1 block h-1.5 w-1.5 flex-shrink-0 rounded-full bg-accent" />
-                    {suggestion}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-center text-sm text-muted-foreground">
-                {loading ? 'Analisando dados...' : 'Nenhuma sugestão disponível.'}
-              </p>
-            )}
-          </ScrollArea>
+           <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center text-lg">
+                <Lightbulb className="mr-2 h-5 w-5 text-accent" />
+                Sugestões de Otimização
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-72">
+                {aiSuggestions.length > 0 && !loading ? (
+                  <ul className="space-y-4 text-sm">
+                    {aiSuggestions.map((suggestion, index) => (
+                      <li key={index} className="flex items-start gap-3">
+                        <span className="mt-1.5 block h-2 w-2 flex-shrink-0 rounded-full bg-accent" />
+                        <span>{suggestion}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="pt-4 text-center text-sm text-muted-foreground">
+                    {loading ? 'Analisando dados do armazém...' : 'Nenhuma sugestão disponível no momento.'}
+                  </p>
+                )}
+              </ScrollArea>
+            </CardContent>
+          </Card>
         </div>
         <Separator className="my-4" />
         <SheetFooter className="sm:justify-end gap-2">
            <Button variant="outline" size="sm" onClick={handleExportXlsx}>
             <Download className="mr-2 h-4 w-4" />
-            Excel
+            Exportar Excel
           </Button>
           <Button variant="default" size="sm" onClick={handleExportPdf}>
             <FileText className="mr-2 h-4 w-4" />
-            Relatório PDF
+            Gerar Relatório PDF
           </Button>
         </SheetFooter>
       </SheetContent>

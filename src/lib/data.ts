@@ -12,26 +12,36 @@ function generateWarehouseData(): WarehousePosition[] {
   const numLevels = 5;
   const aisleWidth = 5.0; // Espaço entre as estruturas
 
-  const startX = -25;
+  const startX = -30;
   const startZ = -25;
+  let lastX = startX;
 
   // Gerar Porta-Paletes (Racks)
   for (let aisleIndex = 0; aisleIndex < numAisles; aisleIndex++) {
     let currentX;
-    const isDoubleAisle = aisleIndex === 1 || aisleIndex === 3; // Corredores 2/3 e 4/5 são duplos
-
-    if (aisleIndex === 0) { // Rua 1
+    
+    // Rua 1 (simples)
+    if (aisleIndex === 0) {
       currentX = startX;
-    } else if (aisleIndex === 1) { // Rua 2
-      currentX = startX + rackWidth + aisleWidth;
-    } else if (aisleIndex === 2) { // Rua 3 (encostado na Rua 2)
-      currentX = startX + rackWidth + aisleWidth + rackWidth;
-    } else if (aisleIndex === 3) { // Rua 4
-      currentX = startX + rackWidth + aisleWidth + rackWidth + rackWidth + aisleWidth;
-    } else if (aisleIndex === 4) { // Rua 5 (encostado na Rua 4)
-      currentX = startX + rackWidth + aisleWidth + rackWidth + rackWidth + aisleWidth + rackWidth;
-    } else { // Rua 6
-      currentX = startX + rackWidth + aisleWidth + rackWidth + rackWidth + aisleWidth + rackWidth + rackWidth + aisleWidth;
+      lastX = currentX;
+    } 
+    // Rua 2 e 3 (duplas)
+    else if (aisleIndex === 1) {
+      currentX = lastX + rackWidth + aisleWidth;
+    } else if (aisleIndex === 2) {
+      currentX = lastX + rackWidth + aisleWidth + rackWidth;
+      lastX = currentX;
+    }
+    // Rua 4 e 5 (duplas)
+    else if (aisleIndex === 3) {
+      currentX = lastX + rackWidth + aisleWidth;
+    } else if (aisleIndex === 4) {
+      currentX = lastX + rackWidth + aisleWidth + rackWidth;
+      lastX = currentX;
+    }
+    // Rua 6 (simples)
+    else {
+      currentX = lastX + rackWidth + aisleWidth;
     }
     
     for (let col = 0; col < numCols; col++) {
@@ -60,19 +70,25 @@ function generateWarehouseData(): WarehousePosition[] {
         });
       }
     }
+     if (aisleIndex === 0 || aisleIndex === 2 || aisleIndex === 4) {
+        lastX = currentX;
+    }
   }
 
   // --- Configurações dos Blocados ---
-  const blockWidth = 1.2;
-  const blockLength = 12; // 10 paletes * 1.2m
-  const blockAisle = 6;
-  const blockStartZ = 15;
-  const blockHeight = 1.2;
+  const blockPalletWidth = 1.2;
+  const blockPalletHeight = 1.2;
+  const blockStartX = lastX + rackWidth + aisleWidth; // Começa depois da última rua de racks
+  const blockStartZ = startZ;
+  const blockAisle = 2.8;
 
   // Gerar Blocados
   for (let row = 1; row <= 2; row++) {
       for (let quad = 1; quad <= 2; quad++) {
           const id = `B${row}-Q${quad}`;
+          const quadStartX = blockStartX + (row - 1) * (blockPalletWidth * 5 + aisleWidth);
+          const quadStartZ = blockStartZ + (quad-1) * (blockPalletWidth * 1.2 + blockAisle);
+
           // Um blocado é uma coleção de posições de paletes
           for (let i = 0; i < 10; i++) {
             const palletId = `${id}-P${i+1}`;
@@ -83,14 +99,14 @@ function generateWarehouseData(): WarehousePosition[] {
               code: palletId,
               type: 'FLOOR_BLOCK',
               position: [
-                  -15 + (row-1) * (blockLength + blockAisle) + i * blockWidth + blockWidth / 2,
-                  blockHeight / 2,
-                  blockStartZ + (quad-1) * (blockWidth + 2.8)
+                  quadStartX + i * blockPalletWidth,
+                  blockPalletHeight / 2,
+                  quadStartZ
               ],
               rotation: [0, 0, 0],
-              dimensions: [blockWidth, blockHeight, blockWidth],
+              dimensions: [blockPalletWidth, blockPalletHeight, blockPalletWidth],
               occupancyPercentage: isOccupied ? 100 : 0,
-              status: isOccupied ? 'NORMAL' : 'EMPTY',
+              status: isOccupied ? (Math.random() < 0.02 ? 'ALERT' : 'NORMAL') : 'EMPTY',
               items: isOccupied ? [{
                   sku: `SKU-${palletId}`,
                   description: 'Palete blocado',
