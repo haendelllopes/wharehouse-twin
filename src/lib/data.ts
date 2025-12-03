@@ -12,34 +12,28 @@ function generateWarehouseData(): WarehousePosition[] {
   const numLevels = 5;
   const aisleWidth = 5.0; // Espaço entre as estruturas
 
-  const startX = -20; // Ajustado para centralizar
+  const startX = -20;
   const startZ = -15;
-  let lastX = startX;
+  let lastPairX = startX;
 
   // Gerar Porta-Paletes (Racks)
   for (let aisleIndex = 0; aisleIndex < numAisles; aisleIndex++) {
     let currentX;
     
-    // Rua 1 (simples)
-    if (aisleIndex === 0) {
+    if (aisleIndex === 0) { // Rua 1 (simples, na borda)
       currentX = startX;
-      lastX = currentX;
-    } 
-    // Rua 2 e 3 (duplas)
-    else if (aisleIndex === 1) {
-      currentX = lastX + rackWidth + aisleWidth;
-    } else if (aisleIndex === 2) {
-      currentX = lastX; // Rua 3 fica encostada na 2
-    }
-    // Rua 4 e 5 (duplas)
-    else if (aisleIndex === 3) {
-      currentX = lastX + rackWidth * 2 + aisleWidth; // Pula as 2 ruas anteriores
-    } else if (aisleIndex === 4) {
-      currentX = lastX + rackWidth; // Rua 5 encostada na 4
-    }
-    // Rua 6 (simples)
-    else {
-      currentX = lastX + rackWidth * 2 + aisleWidth; // Pula as 2 ruas anteriores
+    } else if (aisleIndex === 1) { // Rua 2 (início do primeiro par)
+      currentX = startX + rackWidth + aisleWidth;
+      lastPairX = currentX;
+    } else if (aisleIndex === 2) { // Rua 3 (costas com a Rua 2)
+      currentX = lastPairX + rackWidth;
+    } else if (aisleIndex === 3) { // Rua 4 (início do segundo par)
+      currentX = lastPairX + rackWidth * 2 + aisleWidth;
+      lastPairX = currentX;
+    } else if (aisleIndex === 4) { // Rua 5 (costas com a Rua 4)
+      currentX = lastPairX + rackWidth;
+    } else { // Rua 6 (simples, na outra borda)
+      currentX = lastPairX + rackWidth * 2 + aisleWidth;
     }
     
     for (let col = 0; col < numCols; col++) {
@@ -55,7 +49,7 @@ function generateWarehouseData(): WarehousePosition[] {
           code: id,
           type: 'RACK',
           position: [
-            currentX + (aisleIndex === 2 || aisleIndex === 4 ? rackWidth : 0),
+            currentX,
             level * rackHeight + rackHeight / 2,
             startZ + col * rackDepth,
           ],
@@ -68,12 +62,6 @@ function generateWarehouseData(): WarehousePosition[] {
         });
       }
     }
-    // Atualiza o lastX para a próxima iteração das ruas duplas
-    if (aisleIndex === 1) {
-      lastX = currentX;
-    } else if (aisleIndex === 3) {
-      lastX = currentX;
-    }
   }
 
   // --- Configurações dos Blocados ---
@@ -83,8 +71,8 @@ function generateWarehouseData(): WarehousePosition[] {
   const blockAisle = 6.0;
 
   // Posição inicial dos blocados, ao lado da última rua de racks.
-  const lastRackX = startX + (numAisles/2-1)*(rackWidth*2 + aisleWidth) + rackWidth;
-  const blockStartX = lastRackX + rackWidth + 4; // 4 metros de espaço
+  const lastRackX = lastPairX + rackWidth * 2 + aisleWidth + rackWidth;
+  const blockStartX = lastRackX + 4; // 4 metros de espaço
 
 
   // Gerar Blocados - 2 ruas com 2 quadras cada, na mesma orientação dos racks
