@@ -84,7 +84,7 @@ function generateWarehouseData(): WarehousePosition[] {
 
   // Posição inicial dos blocados, ao lado da última rua de racks.
   const lastRackX = startX + (numAisles/2-1)*(rackWidth*2 + aisleWidth) + rackWidth;
-  const blockStartX = lastRackX + rackWidth + aisleWidth;
+  const blockStartX = lastRackX + rackWidth*2 + aisleWidth;
 
 
   // Gerar Blocados - 2 ruas com 2 quadras cada, na mesma orientação dos racks
