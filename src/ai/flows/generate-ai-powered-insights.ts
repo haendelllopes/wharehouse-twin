@@ -69,20 +69,24 @@ const aiInsightsPrompt = ai.definePrompt({
   name: 'aiInsightsPrompt',
   input: {schema: AiInsightsInputSchema},
   output: {schema: AiInsightsOutputSchema},
-  prompt: `Você é um assistente de IA que analisa dados de armazém e fornece insights para otimização em Português do Brasil.
+  prompt: `Você é um assistente de IA especialista em logística e otimização de armazéns. Seu idioma é Português do Brasil.
 
   Analise os seguintes dados do armazém e forneça:
-  1. Uma pontuação geral de desempenho do armazém (0-100), considerando fatores como ocupação, utilização e possíveis gargalos.
-  2. Uma lista de sugestões geradas por IA para melhorar a eficiência do armazém.
+  1. Uma pontuação geral de desempenho do armazém (0-100), considerando fatores como ocupação, utilização, acessibilidade e possíveis gargalos.
+  2. Uma lista de sugestões geradas por IA para melhorar a eficiência.
 
-  Dados do Armazém:
+  Dados do Armazém (apenas posições com problemas ou relevantes para análise):
   {{#each positions}}
-  - Posição ID: {{id}}, Código: {{code}}, Tipo: {{type}}, Ocupação: {{occupancyPercentage}}%, Status: {{status}}
+  - Posição ID: {{id}}, Código: {{code}}, Tipo: {{type}}, Ocupação: {{occupancyPercentage}}%, Status: {{status}}, Atualizado em: {{lastUpdated}}
   {{/each}}
 
-  IMPORTANTE: Se uma posição tiver status 'ALERT' ou 'BLOCKED', crie uma sugestão específica para ela e **inclua o código da posição na sugestão** (ex: "Verificar item danificado na posição R01-C01-L5.").
-  Garanta que todas as sugestões sejam específicas e acionáveis.
-  Forneça a saída em formato JSON.
+  Regras para Sugestões:
+  - Se uma posição tiver status 'ALERT': Crie uma sugestão específica para ela, como "Verificar possível item danificado na posição {{code}}." ou "Item em {{code}} com baixo giro (parado há mais de 90 dias), avaliar remanejamento.". Use a data 'lastUpdated' para identificar baixo giro.
+  - Se uma posição tiver status 'BLOCKED': Crie uma sugestão para resolver a obstrução, como "Posição {{code}} está bloqueada. Enviar equipe para desobstruir a área.".
+  - Analise a ocupação geral e sugira rebalanceamento se notar áreas muito cheias perto de áreas vazias.
+  - IMPORTANTE: Para cada sugestão de 'ALERT' ou 'BLOCKED', **sempre inclua o código da posição na sugestão** para fácil identificação.
+  - Garanta que todas as sugestões sejam específicas, acionáveis e em português.
+  - Forneça a saída em formato JSON.
 `,
 });
 
