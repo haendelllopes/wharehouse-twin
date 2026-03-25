@@ -1,0 +1,171 @@
+{
+  "entities": {
+    "WarehousePosition": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "WarehousePosition",
+      "type": "object",
+      "description": "Represents a physical or logical structure within the warehouse, such as a rack or a floor block, with its layout and occupancy data.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the WarehousePosition entity."
+        },
+        "code": {
+          "type": "string",
+          "description": "A human-readable code identifying the warehouse position, e.g., 'Rua-A-01-1'."
+        },
+        "type": {
+          "type": "string",
+          "description": "The category of the warehouse structure, such as 'RACK' for vertical shelving or 'FLOOR_BLOCK' for floor-level areas."
+        },
+        "position": {
+          "type": "array",
+          "description": "The 3D coordinates [x, y, z] representing the structure's origin in the warehouse layout.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "rotation": {
+          "type": "array",
+          "description": "The 3D rotation [x, y, z] of the structure in radians, typically around its local axes.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "dimensions": {
+          "type": "array",
+          "description": "The 3D dimensions [width, height, depth] of the structure in units relevant to the 3D scene.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "occupancyPercentage": {
+          "type": "number",
+          "description": "The current occupancy level of the position, expressed as a percentage. This can exceed 100% for overloaded positions."
+        },
+        "status": {
+          "type": "string",
+          "description": "The operational status of the warehouse position (e.g., 'NORMAL', 'ALERT', 'EMPTY', 'BLOCKED'), indicating its current condition."
+        },
+        "lastUpdated": {
+          "type": "string",
+          "description": "Timestamp indicating when the position's data was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "code",
+        "type",
+        "position",
+        "rotation",
+        "dimensions",
+        "occupancyPercentage",
+        "status",
+        "lastUpdated"
+      ]
+    },
+    "InventoryItem": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "InventoryItem",
+      "type": "object",
+      "description": "Represents a specific product or a batch of products stored within a particular warehouse position.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the InventoryItem entity."
+        },
+        "sku": {
+          "type": "string",
+          "description": "Stock Keeping Unit, a unique identifier for the product type."
+        },
+        "description": {
+          "type": "string",
+          "description": "A brief textual description of the product."
+        },
+        "quantity": {
+          "type": "number",
+          "description": "The count or amount of the product associated with this inventory item record."
+        },
+        "lpn": {
+          "type": "string",
+          "description": "License Plate Number, an optional identifier for a logistics unit (e.g., pallet, container) containing the product."
+        },
+        "warehousePositionId": {
+          "type": "string",
+          "description": "Reference to the WarehousePosition where this inventory item is physically located. (Relationship: WarehousePosition 1:N InventoryItem)"
+        }
+      },
+      "required": [
+        "id",
+        "sku",
+        "description",
+        "quantity",
+        "warehousePositionId"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/warehouseManagers/{userId}",
+        "definition": {
+          "entityName": "WarehouseManager",
+          "schema": {
+            "$ref": "#/backend/entities/WarehouseManager"
+          },
+          "description": "Collection to store UIDs of users authorized as warehouse managers. Documents are primarily for existence checks for Database-Backed Access Control (DBAC), enabling Authorization Independence for other collections.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier (UID) of the user who is a warehouse manager."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/warehousePositions/{warehousePositionId}",
+        "definition": {
+          "entityName": "WarehousePosition",
+          "schema": {
+            "$ref": "#/backend/entities/WarehousePosition"
+          },
+          "description": "Root collection for all warehouse positions. Access is restricted to authorized `warehouseManagers` via DBAC.",
+          "params": [
+            {
+              "name": "warehousePositionId",
+              "description": "The unique identifier for a specific warehouse position."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/warehousePositions/{warehousePositionId}/inventoryItems/{inventoryItemId}",
+        "definition": {
+          "entityName": "InventoryItem",
+          "schema": {
+            "$ref": "#/backend/entities/InventoryItem"
+          },
+          "description": "Subcollection containing inventory items for a specific warehouse position. Includes `warehousePositionId` for explicit relational integrity and is secured by the global `warehouseManager` role.",
+          "params": [
+            {
+              "name": "warehousePositionId",
+              "description": "The unique identifier of the parent warehouse position."
+            },
+            {
+              "name": "inventoryItemId",
+              "description": "The unique identifier for a specific inventory item."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to be secure, scalable, and debuggable, prioritizing Authorization Independence and secure `list` operations (QAPs). Given the application's context as a 'Digital Twin' for 'Warehouse Operations Managers', the core data (`WarehousePosition` and `InventoryItem`) is treated as collaborative data for a team of managers, rather than user-specific private data.\n\n1.  **Global Authorization for Managers (`/warehouseManagers/{userId}`):** To implement Database-Backed Access Control (DBAC) and enable Authorization Independence, a dedicated top-level collection `/warehouseManagers/{userId}` is introduced. This collection's documents act as implicit roles; the *existence* of a document with a user's `uid` here grants them management access to all warehouse data. This adheres to the 'Existence over Content' principle for global roles. By checking `exists(/databases/$(database)/documents/warehouseManagers/$(request.auth.uid))` in Firestore Security Rules, we avoid `get()` calls to parent documents and make authorization atomic and easy to debug. This setup explicitly makes authorization intent clear.\n\n2.  **Top-Level `WarehousePosition` (`/warehousePositions/{warehousePositionId}`):** All `WarehousePosition` documents reside in a single top-level collection. This follows the Structural Segregation mandate as all documents within this collection share the same security posture: they are accessible to any user listed in the `/warehouseManagers` collection. This structure simplifies rules by centralizing the authorization check to the global manager role.\n\n3.  **Nested `InventoryItem` (`/warehousePositions/{warehousePositionId}/inventoryItems/{inventoryItemId}`):** `InventoryItem` documents are stored as a subcollection of their respective `WarehousePosition`. This represents the strong `1:N` hierarchical relationship and continues the path structure for nested data. Each `InventoryItem` document also contains `warehousePositionId` explicitly, which, although redundant with the path, ensures data integrity and supports rule validation (e.g., `request.resource.data.warehousePositionId == warehousePositionId`).\n\n**How Authorization Independence is Achieved:**\n*   For `WarehousePosition` documents: Access rules will directly reference the `/warehouseManagers` collection, e.g., `allow read, write: if exists(/databases/$(database)/documents/warehouseManagers/$(request.auth.uid));`. This does not require fetching data from any parent document or from the `WarehousePosition` itself beyond `request.auth.uid`.\n*   For `InventoryItem` documents: Access rules will also check the global `/warehouseManagers` collection. For example, `allow read, write: if exists(/databases/$(database)/documents/warehouseManagers/$(request.auth.uid));`. Because the `InventoryItem`'s access is globally tied to the same set of managers as its parent `WarehousePosition`, there is no need to denormalize a `members` map from `WarehousePosition` into each `InventoryItem`. The `warehousePositionId` field within `InventoryItem` ensures that its relationship to its parent is explicit.\n\n**How QAPs (Secure Listing) are Supported:**\n*   `list` operations on `/warehousePositions` are secure because the rule `exists(/databases/$(database)/documents/warehouseManagers/$(request.auth.uid))` is applied. This means a user can only `list` the `WarehousePosition` documents if their `uid` is present in the `warehouseManagers` collection.\n*   Similarly, `list` operations on `/warehousePositions/{warehousePositionId}/inventoryItems` will also be secured by the `exists` check against the global `warehouseManagers` collection. This prevents unauthorized users from listing inventory items for any position."
+  }
+}

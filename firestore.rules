@@ -1,0 +1,111 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * CORE PHILOSOPHY
+     * This ruleset implements a Database-Backed Access Control (DBAC) model designed for 
+     * a warehouse management "Digital Twin." Authorization is centralized through a 
+     * global 'Warehouse Manager' role.
+     * 
+     * DATA STRUCTURE
+     * 1. /warehouseManagers/{userId}: A registry of users with management privileges.
+     * 2. /warehousePositions/{posId}: Top-level collection for physical warehouse structures.
+     * 3. /warehousePositions/{posId}/inventoryItems/{itemId}: Nested subcollection for stock.
+     * 
+     * KEY SECURITY DECISIONS
+     * - Authorization Independence: Access to warehouse data is decoupled from the data's 
+     *   internal state and instead relies on the user's existence within the 'warehouseManagers' collection.
+     * - Global Management: All authenticated managers share access to the entire warehouse layout 
+     *   to facilitate collaborative operations.
+     * - Relational Integrity: Strict enforcement ensures that inventory items are correctly 
+     *   linked to their parent warehouse positions via path-to-field matching.
+     * 
+     * DENORMALIZATION FOR AUTHORIZATION
+     * - The 'warehousePositionId' is required on every 'InventoryItem' document. This allows 
+     *   the rules to verify that the document's internal reference matches its physical 
+     *   Firestore path, preventing orphaned or misplaced data records.
+     */
+
+    // --- HELPER FUNCTIONS ---
+
+    /** 
+     * @description Checks if the request is from an authenticated user.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /** 
+     * @description Checks if the user's UID exists in the authorized managers collection.
+     * This is the core of the DBAC model.
+     */
+    function isManager() {
+      return isSignedIn() && exists(/databases/$(database)/documents/warehouseManagers/$(request.auth.uid));
+    }
+
+    /** 
+     * @description Verifies a user is a manager and the document they are trying to 
+     * modify actually exists.
+     */
+    function isExistingManager() {
+      return isManager() && resource != null;
+    }
+
+    /** 
+     * @description Checks if the authenticated user is the owner of the specific UID path.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // --- COLLECTION RULES ---
+
+    /**
+     * @description Manages the registry of authorized warehouse managers.
+     * @path /warehouseManagers/{userId}
+     * @allow Authenticated users can (get) their own manager status; existing managers can (list) all managers.
+     * @deny Non-managers cannot (create) new manager records or (list) the collection.
+     * @principle Database-Backed Access Control (DBAC) initialization and management.
+     */
+    match /warehouseManagers/{userId} {
+      allow get: if isOwner(userId) || isManager();
+      allow list: if isManager();
+      allow create: if isManager(); 
+      allow update, delete: if isExistingManager();
+    }
+
+    /**
+     * @description Controls access to warehouse positions (racks, floor blocks, etc.).
+     * @path /warehousePositions/{warehousePositionId}
+     * @allow Any authorized manager can (list), (get), (create), (update), or (delete) positions.
+     * @deny Unauthenticated users or users not in the 'warehouseManagers' collection are rejected.
+     * @principle Role-based access control and relational ID enforcement.
+     */
+    match /warehousePositions/{warehousePositionId} {
+      allow get, list: if isManager();
+      allow create: if isManager() && request.resource.data.id == warehousePositionId;
+      allow update: if isExistingManager() && request.resource.data.id == resource.data.id;
+      allow delete: if isExistingManager();
+    }
+
+    /**
+     * @description Controls access to inventory items stored within specific positions.
+     * @path /warehousePositions/{warehousePositionId}/inventoryItems/{inventoryItemId}
+     * @allow Authorized managers can (create) items if the internal 'warehousePositionId' matches the URL path.
+     * @deny Operations where the 'warehousePositionId' field is modified or mismatched with the path.
+     * @principle Relational integrity and hierarchical role-based access.
+     */
+    match /warehousePositions/{warehousePositionId}/inventoryItems/{inventoryItemId} {
+      allow get, list: if isManager();
+      
+      // On create, ensure the item is linked to the correct parent position path.
+      allow create: if isManager() && request.resource.data.warehousePositionId == warehousePositionId;
+      
+      // On update, ensure the link to the parent position remains immutable.
+      allow update: if isExistingManager() && request.resource.data.warehousePositionId == resource.data.warehousePositionId;
+      
+      allow delete: if isExistingManager();
+    }
+  }
+}
