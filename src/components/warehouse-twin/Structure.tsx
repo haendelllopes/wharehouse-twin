@@ -27,12 +27,12 @@ export function Structure({ positionData, floorSize }: StructureProps) {
     selectPosition,
     selectedPositionId,
   } = useWarehouseStore();
-  
+
   const [isHovered, setIsHovered] = useState(false);
   const ref = useRef<THREE.Mesh>(null!);
 
   const { id, type, position, dimensions, status, code } = positionData;
-  
+
   const isSelected = selectedPositionId === id;
 
   const color = status === 'EMPTY' ? statusColors.EMPTY : statusColors[status];
@@ -51,18 +51,18 @@ export function Structure({ positionData, floorSize }: StructureProps) {
 
   useFrame(() => {
     if (ref.current && !isWireframe) {
-        let targetColor;
-        if (isSelected) {
-            targetColor = new THREE.Color('#f59e0b'); // Amber for selected
-        } else if (isHovered) {
-            targetColor = new THREE.Color('#06B6D4'); // Cyan for hovered
-        } else {
-            targetColor = new THREE.Color(color);
-        }
-        (ref.current.material as THREE.MeshStandardMaterial).color.lerp(targetColor, 0.1);
+      let targetColor;
+      if (isSelected) {
+        targetColor = new THREE.Color('#f59e0b'); // Amber for selected
+      } else if (isHovered) {
+        targetColor = new THREE.Color('#06B6D4'); // Cyan for hovered
+      } else {
+        targetColor = new THREE.Color(color);
+      }
+      (ref.current.material as THREE.MeshStandardMaterial).color.lerp(targetColor, 0.1);
     }
   });
-  
+
   const handleClick = (e: any) => {
     e.stopPropagation();
     selectPosition(id);
@@ -71,7 +71,7 @@ export function Structure({ positionData, floorSize }: StructureProps) {
   const handlePointerOver = (e: any) => {
     e.stopPropagation();
     if (selectedPositionId !== id) {
-        setIsHovered(true);
+      setIsHovered(true);
     }
     document.body.style.cursor = 'pointer';
   };
@@ -83,29 +83,30 @@ export function Structure({ positionData, floorSize }: StructureProps) {
 
   return (
     <group position={position as [number, number, number]}>
-        <Box
-            ref={ref}
-            args={dimensions as [number, number, number]}
-            onClick={handleClick}
-            onPointerOver={handlePointerOver}
-            onPointerOut={handlePointerOut}
-            castShadow
-            receiveShadow
-            material={material}
-        >
-        </Box>
-        {status === 'ALERT' && <AlertIndicator offset={[0, dimensions[1] / 2 + 0.5, 0]} />}
-        <Text
-            position={[0, dimensions[1] / 2 + (type === 'RACK' ? 0.3 : 0.5), 0]}
-            fontSize={type === 'RACK' ? 0.4 : 0.6}
-            color="white"
-            anchorX="center"
-            anchorY="middle"
-            outlineWidth={0.02}
-            outlineColor="black"
-        >
-            {code}
-        </Text>
+      <Box
+        ref={ref}
+        args={dimensions as [number, number, number]}
+        onClick={handleClick}
+        onPointerOver={handlePointerOver}
+        onPointerOut={handlePointerOut}
+        castShadow
+        receiveShadow
+        material={material}
+      >
+      </Box>
+      {status === 'ALERT' && <AlertIndicator offset={[0, dimensions[1] / 2 + 0.5, 0]} />}
+      <Text
+        position={[0, dimensions[1] / 2 + (type === 'RACK' ? 0.3 : 0.5), 0]}
+        fontSize={type === 'RACK' ? 0.4 : 0.6}
+        color="white"
+        anchorX="center"
+        anchorY="middle"
+        outlineWidth={0.02}
+        outlineColor="black"
+        font="/fonts/arial.ttf"
+      >
+        {code}
+      </Text>
     </group>
   );
 }

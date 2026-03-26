@@ -16,7 +16,7 @@ export function FloorLines({ size }: { size: number }) {
   const startZ = -15;
   const rackWidth = 1.2;
   const aisleWidth = 5.0;
-  
+
   const blockPalletWidth = 1.2;
   const blockPalletDepth = 1.2;
   const blockAisle = 6.0;
@@ -25,7 +25,7 @@ export function FloorLines({ size }: { size: number }) {
 
   // Cálculo do X inicial do bloco baseado na Rua 6 de racks
   // Rua 1: -20, Rua 2: -18.8, Rua 3: -13.8, Rua 4: -12.6, Rua 5: -7.6, Rua 6: -6.4
-  const lastRackX = -6.4; 
+  const lastRackX = -6.4;
   const blockStartX = lastRackX + rackWidth + aisleWidth; // -0.2
 
   // --- GERAÇÃO DAS LINHAS DE DEMARCAÇÃO (BLOCOS) ---
@@ -37,13 +37,13 @@ export function FloorLines({ size }: { size: number }) {
       // Z central do primeiro e último palete da quadra (10 paletes)
       const firstPalletZ = startZ + (quad - 1) * (palletsPerQuad * blockPalletDepth + spaceBetweenQuads);
       const lastPalletZ = firstPalletZ + (palletsPerQuad - 1) * blockPalletDepth;
-      
+
       // Limites reais da área (considerando metade da profundidade do palete para fora do centro)
       const minX = quadStartXPos - blockPalletWidth / 2;
       const maxX = quadStartXPos + blockPalletWidth / 2;
       const minZ = firstPalletZ - blockPalletDepth / 2;
       const maxZ = lastPalletZ + blockPalletDepth / 2;
-      
+
       const y = 0.02; // Levemente acima do chão para evitar z-fighting
 
       // Desenha o retângulo da quadra
@@ -75,13 +75,13 @@ export function FloorLines({ size }: { size: number }) {
         />
       ))}
       {labels.map((label, i) => (
-         <Text
+        <Text
           key={`label-${i}`}
           position={[label.x, 0.1, startZ - 3]}
           rotation={[-Math.PI / 2, 0, 0]}
           fontSize={1.2}
           color="#374151"
-          font="https://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hjp-Ekwfodd8.woff"
+          font="/fonts/arial.ttf"
           anchorX="center"
           anchorY="middle"
         >

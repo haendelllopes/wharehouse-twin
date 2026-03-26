@@ -16,7 +16,7 @@ const FLOOR_SIZE = 45;
 export function WarehouseScene() {
   const { filteredPositions, setCanvasRef } = useWarehouseStore();
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  
+
   useEffect(() => {
     if (canvasRef) {
       setCanvasRef(canvasRef);
@@ -28,10 +28,10 @@ export function WarehouseScene() {
   });
 
   return (
-    <div className="h-full w-full">
-      <Canvas 
+    <div className="absolute inset-0">
+      <Canvas
         ref={canvasRef}
-        shadows 
+        shadows
         camera={{ position: [0, 45, 45], fov: 45 }}
         gl={{ preserveDrawingBuffer: true, antialias: true }}
       >
@@ -45,16 +45,16 @@ export function WarehouseScene() {
             shadow-mapSize-width={4096}
             shadow-mapSize-height={4096}
             shadow-camera-far={100}
-            shadow-camera-left={-FLOOR_SIZE/2}
-            shadow-camera-right={FLOOR_SIZE/2}
-            shadow-camera-top={FLOOR_SIZE/2}
-            shadow-camera-bottom={-FLOOR_SIZE/2}
+            shadow-camera-left={-FLOOR_SIZE / 2}
+            shadow-camera-right={FLOOR_SIZE / 2}
+            shadow-camera-top={FLOOR_SIZE / 2}
+            shadow-camera-bottom={-FLOOR_SIZE / 2}
           />
           <OrbitControls makeDefault minDistance={10} maxDistance={100} maxPolarAngle={Math.PI / 2.1} enableDamping={false} />
 
           <Floor size={FLOOR_SIZE} />
           <FloorLines size={FLOOR_SIZE} />
-          
+
           <InstancedStructure positions={filteredPositions} />
 
         </Suspense>

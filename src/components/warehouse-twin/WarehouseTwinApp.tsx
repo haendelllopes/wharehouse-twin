@@ -14,9 +14,11 @@ import { FilterSidebar } from './FilterSidebar';
 export default function WarehouseTwinApp() {
   const { positions, setAiData } = useWarehouseStore();
   const [loadingAi, setLoadingAi] = useState(true);
-  
+  const hasRunRef = useRef(false);
+
   useEffect(() => {
-    if (positions.length > 0) {
+    if (positions.length > 0 && !hasRunRef.current) {
+      hasRunRef.current = true;
       const analyze = async () => {
         setLoadingAi(true);
         try {
@@ -25,19 +27,18 @@ export default function WarehouseTwinApp() {
             const { performanceScore, aiSuggestions } = result;
             setAiData(performanceScore, aiSuggestions);
           } else {
-             throw new Error("AI analysis returned undefined");
+            throw new Error("AI analysis returned undefined");
           }
         } catch (error) {
-            console.error("Failed to run AI analysis", error);
-            setAiData(0, ["Erro ao analisar os dados."]);
+          console.error("Failed to run AI analysis", error);
+          setAiData(0, ["Erro ao analisar os dados por limite de cota da IA. Consulte o console."]);
         } finally {
-            setLoadingAi(false);
+          setLoadingAi(false);
         }
       };
       analyze();
     }
   }, [positions, setAiData]);
-
 
   return (
     <div className="flex h-screen w-full flex-col bg-background">
